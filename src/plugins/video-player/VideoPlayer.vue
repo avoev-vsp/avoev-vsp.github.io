@@ -54,7 +54,8 @@ class MyComponent extends Vue {
     preload: 'metadata',
     responsive: true,
     fluid: true,
-    playsinline: true,
+    playsInline: true,
+    controls: true,
     sources: [] as any[],
   }
 
