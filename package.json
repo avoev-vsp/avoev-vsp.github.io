@@ -6,7 +6,8 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "test:unit": "vue-cli-service test:unit",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "release": "standard-version"
   },
   "dependencies": {
     "@statnett/vue-plotly": "^0.3.2",
@@ -93,6 +94,7 @@
     "pug-plain-loader": "^1.0.0",
     "raw-loader": "^4.0.0",
     "sass-loader": "^8.0.2",
+    "standard-version": "^8.0.2",
     "typescript": "~3.7.5",
     "vue-template-compiler": "^2.6.11",
     "worker-loader": "^2.0.0",
