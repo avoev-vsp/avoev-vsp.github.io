@@ -1,13 +1,14 @@
 <template lang="pug">
-#container
-  .status-blob(v-if="!thumbnail && loadingText"): p {{ loadingText }}
+.mycomponent(:id="containerId")
+  .status-blob(v-show="!thumbnail && loadingText")
+    p {{ loadingText }}
 
   .map-complications(v-if="!thumbnail && !isMobile()")
     legend-box.complication(:rows="legendRows")
     scale-box.complication(:rows="scaleRows")
 
   .map-container
-    #mymap
+    .mymap(:id="mapId")
 
   left-data-panel.left-panel(v-if="!thumbnail && !loadingText")
    .dashboard-panel
@@ -152,6 +153,9 @@ class MyComponent extends Vue {
     title: '',
     description: '',
   }
+
+  private containerId = `c${Math.floor(Math.random() * Math.floor(1e10))}`
+  private mapId = 'map-' + this.containerId
 
   private centroids: any = {}
   private centroidSource: any = {}
@@ -362,7 +366,7 @@ class MyComponent extends Vue {
 
   private setupMap() {
     this.mymap = new mapboxgl.Map({
-      container: 'mymap',
+      container: this.mapId,
       logoPosition: 'bottom-right',
       style: 'mapbox://styles/mapbox/outdoors-v9',
     })
@@ -423,7 +427,6 @@ class MyComponent extends Vue {
 
   private async mapIsReady() {
     const files = await this.loadFiles()
-    console.log({ files })
     if (files) {
       this.geojson = await this.processShapefile(files)
       this.processHourlyData(files.odFlows)
@@ -515,7 +518,7 @@ class MyComponent extends Vue {
 
   private buildSpiderLinks() {
     this.createSpiderLinks()
-    console.log({ spiders: this.spiderLinkFeatureCollection })
+    // console.log({ spiders: this.spiderLinkFeatureCollection })
 
     this.mymap.addSource('spider-source', {
       data: this.spiderLinkFeatureCollection,
@@ -618,15 +621,15 @@ class MyComponent extends Vue {
   }
 
   private clickedOnCentroid(e: any) {
-    console.log({ CLICK: e })
+    // console.log({ CLICK: e })
 
     e.originalEvent.stopPropagating = true
 
     const centroid = e.features[0].properties
-    console.log(centroid)
+    // console.log(centroid)
 
     const id = centroid.id
-    console.log('clicked on id', id)
+    // console.log('clicked on id', id)
     // a second click on a centroid UNselects it.
     if (id === this.selectedCentroid) {
       this.unselectAllCentroids()
@@ -635,9 +638,9 @@ class MyComponent extends Vue {
 
     this.selectedCentroid = id
 
-    console.log(this.marginals)
-    console.log(this.marginals.rowTotal[id])
-    console.log(this.marginals.colTotal[id])
+    // console.log(this.marginals)
+    // console.log(this.marginals.rowTotal[id])
+    // console.log(this.marginals.colTotal[id])
 
     this.fadeUnselectedLinks(id)
   }
@@ -657,10 +660,10 @@ class MyComponent extends Vue {
   private clickedOnSpiderLink(e: any) {
     if (e.originalEvent.stopPropagating) return
 
-    console.log({ CLICK: e })
+    // console.log({ CLICK: e })
 
     const props = e.features[0].properties
-    console.log(props)
+    // console.log(props)
 
     const trips = props.daily * this.scaleFactor
     let revTrips = 0
@@ -837,8 +840,8 @@ class MyComponent extends Vue {
 
     this.centroidSource = centroids
 
-    console.log({ CENTROIDS: this.centroids })
-    console.log({ CENTROIDSOURCE: this.centroidSource })
+    // console.log({ CENTROIDS: this.centroids })
+    // console.log({ CENTROIDSOURCE: this.centroidSource })
 
     this.mymap.addSource('centroids', {
       data: this.centroidSource,
@@ -1024,7 +1027,7 @@ class MyComponent extends Vue {
     this.colName = headers[1]
     this.headers = [TOTAL_MSG].concat(headers.slice(2))
 
-    console.log(this.headers)
+    // console.log(this.headers)
 
     for (const row of lines.slice(1)) {
       // skip header row
@@ -1050,7 +1053,7 @@ class MyComponent extends Vue {
         this.linkData[rowName] = { orig: columns[0], dest: columns[1], daily, values }
       }
     }
-    console.log({ DAILY: this.dailyData, LINKS: this.linkData, ZONES: this.zoneData })
+    // console.log({ DAILY: this.dailyData, LINKS: this.linkData, ZONES: this.zoneData })
   }
 
   private updateMapExtent(coordinates: any) {
@@ -1184,7 +1187,7 @@ class MyComponent extends Vue {
   }
 
   private changedScale(value: any) {
-    console.log({ slider: value, timebin: this.currentTimeBin })
+    // console.log({ slider: value, timebin: this.currentTimeBin })
     this.currentScale = value
     this.changedTimeSlider(this.currentTimeBin)
   }
@@ -1210,7 +1213,7 @@ globalStore.commit('registerPlugin', {
 export default MyComponent
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 h3 {
   margin: 0px 0px;
   font-size: 16px;
@@ -1220,7 +1223,7 @@ h4 {
   margin-left: 3px;
 }
 
-#container {
+.mycomponent {
   width: 100%;
   display: grid;
   grid-template-columns: auto 1fr;
@@ -1232,7 +1235,7 @@ h4 {
   grid-row: 1 / 3;
   background-color: white;
   box-shadow: 0 0 8px #00000040;
-  margin: auto 0px auto 0px;
+  margin: auto 0px;
   padding: 3rem 0px;
   text-align: center;
   z-index: 99;
@@ -1241,7 +1244,7 @@ h4 {
 }
 
 .map-container {
-  min-height: 225px;
+  min-height: 200px;
   background-color: #eee;
   grid-column: 1 / 3;
   grid-row: 1 / 3;
@@ -1249,7 +1252,7 @@ h4 {
   flex-direction: column;
 }
 
-#mymap {
+.mymap {
   height: 100%;
   width: 100%;
   flex: 1;
@@ -1382,7 +1385,7 @@ h4 {
   grid-row: 1 / 3;
   display: flex;
   flex-direction: column;
-  width: 17rem;
+  width: 18rem;
 }
 
 .dashboard-panel {
