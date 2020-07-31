@@ -50,8 +50,6 @@ class App extends Vue {
   }
 
   @Watch('state.isFullScreen') toggleFullScreen(isFullPage: boolean) {
-    console.log('~~SWITCHING FULL PAGE: ', isFullPage)
-
     if (isFullPage) {
       document.body.classList.add('full-screen-page')
     } else {

@@ -462,7 +462,7 @@ export default MyComponent
   grid-template-columns: 1fr;
   grid-template-rows: 1fr;
   width: 100%;
-  min-height: 225px;
+  min-height: 200px;
   background: url('./thumb-linkvols.jpg') no-repeat center;
 }
 

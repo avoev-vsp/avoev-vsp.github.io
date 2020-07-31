@@ -3,6 +3,7 @@
   .content-area(:class="{'is-hidden': isHidden, 'bye': isLeaving}")
     .info-header(v-if="title")
       h3(style="padding: 0.5rem 3rem; font-size: 1rem; font-weight: normal; color: white;") {{ title }}
+
     .top-area
       slot
 

@@ -216,7 +216,7 @@ globalStore.commit('registerPlugin', {
   kebabName: 'video-player',
   prettyName: 'Video',
   description: '',
-  filePatterns: ['*.(mp4|mov|avi)'],
+  filePatterns: ['*.mp4'],
   component: MyComponent,
 } as VisualizationPlugin)
 
