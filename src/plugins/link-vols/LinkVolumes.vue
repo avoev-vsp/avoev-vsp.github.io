@@ -79,7 +79,7 @@ class MyComponent extends Vue {
     subfolder: this.subfolder,
     yamlConfig: this.yamlConfig,
     thumbnail: this.thumbnail,
-    loadingText: 'Network Volume Plot',
+    loadingText: '',
     visualization: null,
     project: {},
   }
@@ -127,7 +127,7 @@ class MyComponent extends Vue {
     const options = this.thumbnail
       ? { animate: false }
       : {
-          padding: { top: 50, bottom: 100, right: 100, left: 300 },
+          padding: { top: 10, bottom: 10, right: 10, left: 250 },
           animate: false,
         }
     this.map.fitBounds(this.mapExtentXYXY, options)
@@ -270,14 +270,20 @@ class MyComponent extends Vue {
 
     console.log({ geojson })
 
+    this.vizDetails.idColumn = 'Id'
+
+    let id = 0
     for (const feature of geojson.features) {
       // 'id' column used for lookup, unless idColumn is set in YAML
-      if (!this.vizDetails.idColumn && feature.properties)
-        this.vizDetails.idColumn = Object.keys(feature.properties)[0]
+
+      //if (!this.vizDetails.idColumn && feature.properties)
+      //   this.vizDetails.idColumn = Object.keys(feature.properties)[0]
 
       // Save ID somewhere more helpful
-      if (feature.properties && this.vizDetails.idColumn) {
-        feature.id = feature.properties[this.vizDetails.idColumn]
+      if (feature.properties) {
+        // && this.vizDetails.idColumn) {
+        feature.id = id++ // feature.properties[this.vizDetails.idColumn]
+        this.idLookup[feature.properties[this.vizDetails.idColumn]] = feature.id
       }
 
       try {
@@ -360,6 +366,7 @@ class MyComponent extends Vue {
   }
 
   private dataset: any = {}
+  private idLookup: any = {}
 
   // Called immediately after MapBox is ready to draw the map
   private async mapIsReady() {
@@ -411,7 +418,10 @@ class MyComponent extends Vue {
     const key = content.meta.fields[0]
 
     for (const row of content.data) {
-      this.dataset[row[key]] = row
+      // mapbox requires numerical IDs
+      const originalId = row[key]
+      const numericalId = this.idLookup[originalId]
+      this.dataset[numericalId] = row
     }
     console.log({ dataset: this.dataset })
   }
@@ -419,14 +429,15 @@ class MyComponent extends Vue {
   private calculateLinkProperties(json: any) {
     console.log('features: ', json.features.length)
     for (const link of json.features) {
-      const id = link.properties.Id
+      const id = link.id
 
-      let width = 1
+      link.properties.width = 2
       const values = this.dataset[id]
       if (values) {
-        link.properties.width = Math.log(2 * values['08:00:00'])
-        if (link.properties.width < 1) link.properties.width = 1
-        link.properties.vc = values['08:00:00'] * 0.01
+        link.properties.width = 0.075 * values['09:00:00']
+        // Math.log(2 * values['08:00:00'])
+        if (link.properties.width < 3) link.properties.width = 3
+        // link.properties.vc = values['08:00:00'] * 0.01
       }
     }
   }
@@ -445,46 +456,86 @@ class MyComponent extends Vue {
         source: 'my-data',
         type: 'line',
         paint: {
-          'line-opacity': 0.8,
+          'line-opacity': 1.0,
           'line-width': ['get', 'width'],
-          'line-color': {
-            property: 'vc',
-            stops: [
-              [0.4, '#04c'],
-              [0.8, '#084'],
-              [1.0, '#0a0'],
-              [1.3, '#cc0'],
-              [1.7, '#fc0'],
-              [2.0, '#800'],
-            ],
-          },
+          'line-offset': ['+', 0.25, ['*', 0.5, ['get', 'width']]],
+          'line-color': ['case', ['boolean', ['feature-state', 'hover'], false], '#fb0', '#66a'],
         },
+        layout: {
+          'line-cap': 'round',
+        },
+        // {
+        //   property: 'vc',
+        //   stops: [
+        //     [0.4, '#04c'],
+        //     [0.8, '#084'],
+        //     [1.0, '#0a0'],
+        //     [1.3, '#cc0'],
+        //   ],
+        // },
         // });
-      },
-      'road-primary'
+      }
+      // 'road-primary'
     ) // layer gets added just *above* this MapBox-defined layer.
   }
 
   private setupMapListeners() {
     if (!this.map) return
 
-    this.map.on('click', 'my-layer', (e: MapMouseEvent) => {
+    const layerName = 'my-layer'
+    const parent = this
+
+    this.map.on('click', layerName, (e: MapMouseEvent) => {
       // this.clickedOnTaz(e)
     })
 
     // turn "hover cursor" into a pointer, so user knows they can click.
-    this.map.on('mousemove', 'my-layer', (e: MapMouseEvent) => {
+    this.map.on('mousemove', layerName, (e: MapMouseEvent) => {
       if (!this.map) return
-      this.map.getCanvas().style.cursor = e ? 'pointer' : '-webkit-grab'
+      this.map.getCanvas().style.cursor = e ? 'pointer' : 'auto'
     })
 
     // and back to normal when they mouse away
-    this.map.on('mouseleave', 'my-layer', () => {
+    this.map.on('mouseleave', layerName, () => {
       if (!this.map) return
-      this.map.getCanvas().style.cursor = '-webkit-grab'
+      this.map.getCanvas().style.cursor = 'auto'
+    })
+
+    // set hovers
+    this.map.on('mousemove', layerName, function(e: MapMouseEvent) {
+      const features = parent.map.queryRenderedFeatures(e.point) as any[]
+
+      if (features.length > 0) {
+        if (parent.hoveredStateId) {
+          parent.map.setFeatureState(
+            { source: 'my-data', id: parent.hoveredStateId },
+            { hover: false }
+          )
+        }
+
+        parent.hoveredStateId = features[0].id
+
+        parent.map.setFeatureState(
+          { source: 'my-data', id: parent.hoveredStateId },
+          { hover: true }
+        )
+      }
+    })
+
+    // When the mouse leaves the state-fill layer, update the feature state of the
+    // previously hovered feature.
+    this.map.on('mouseleave', layerName, function() {
+      if (parent.hoveredStateId) {
+        parent.map.setFeatureState(
+          { source: 'my-data', id: parent.hoveredStateId },
+          { hover: false }
+        )
+      }
+      parent.hoveredStateId = null
     })
   }
 
+  private hoveredStateId: any = null
   private _popup: any
 
   /*
