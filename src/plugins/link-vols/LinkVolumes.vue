@@ -1,22 +1,22 @@
 <template lang="pug">
 #link-container
   .map-container(v-if="!thumbnail")
-    #linkmymap
+    .mymap(:id="mapId")
 
-  .status-blob(v-if="myState.loadingText"): h4 {{ myState.loadingText }}
+  .status-blob(v-show="myState.loadingText")
+    h4 {{ myState.loadingText }}
+
 </template>
 
 <script lang="ts">
 'use strict'
 
 import * as shapefile from 'shapefile'
-import * as turf from '@turf/turf'
-import colormap from 'colormap'
 import { debounce } from 'debounce'
 import { FeatureCollection, Feature } from 'geojson'
 import mapboxgl, { LngLat, MapMouseEvent, PositionOptions } from 'mapbox-gl'
-import { multiPolygon } from '@turf/turf'
 import nprogress from 'nprogress'
+import Papaparse from 'papaparse'
 import proj4 from 'proj4'
 import readBlob from 'read-blob'
 import VueSlider from 'vue-slider-component'
@@ -69,6 +69,10 @@ class MyComponent extends Vue {
 
   private globalState = globalStore.state
 
+  private mapExtentXYXY: any = [180, 90, -180, -90]
+
+  private mapId = `m${Math.floor(Math.random() * Math.floor(1e10))}`
+
   private myState = {
     fileApi: this.fileApi,
     fileSystem: undefined as SVNProject | undefined,
@@ -108,6 +112,25 @@ class MyComponent extends Vue {
 
     this.generateBreadcrumbs()
     this.setupMap()
+  }
+
+  private updateMapExtent(coordinates: any) {
+    this.mapExtentXYXY[0] = Math.min(this.mapExtentXYXY[0], coordinates[0])
+    this.mapExtentXYXY[1] = Math.min(this.mapExtentXYXY[1], coordinates[1])
+    this.mapExtentXYXY[2] = Math.max(this.mapExtentXYXY[2], coordinates[0])
+    this.mapExtentXYXY[3] = Math.max(this.mapExtentXYXY[3], coordinates[1])
+  }
+
+  private setMapExtent() {
+    localStorage.setItem(this.$route.fullPath + '-bounds', JSON.stringify(this.mapExtentXYXY))
+
+    const options = this.thumbnail
+      ? { animate: false }
+      : {
+          padding: { top: 50, bottom: 100, right: 100, left: 300 },
+          animate: false,
+        }
+    this.map.fitBounds(this.mapExtentXYXY, options)
   }
 
   private generateBreadcrumbs() {
@@ -170,24 +193,23 @@ class MyComponent extends Vue {
   }
 
   private setupMap() {
-    this.map = new mapboxgl.Map({
-      bearing: 0,
-      center: [13.4, 52.5], // lnglat, not latlng
-      container: 'linkmymap',
-      logoPosition: 'bottom-left',
-      style: 'mapbox://styles/mapbox/light-v9',
-      pitch: 0,
-      zoom: 11,
-    })
+    try {
+      this.map = new mapboxgl.Map({
+        bearing: 0,
+        container: this.mapId,
+        logoPosition: 'bottom-right',
+        style: 'mapbox://styles/mapbox/light-v9',
+        pitch: 0,
+      })
 
-    this.map.on('style.load', this.mapIsReady)
-    this.map.addControl(new mapboxgl.NavigationControl(), 'top-right')
+      this.map.on('style.load', this.mapIsReady)
+      this.map.addControl(new mapboxgl.NavigationControl(), 'top-right')
+    } catch (e) {
+      console.log(e)
+    }
   }
 
   private async getVizDetails() {
-    // store.visualization = await store.api.fetchVisualization(store.projectId, store.vizId)
-    // store.project = await store.api.fetchProject(store.projectId)
-    // first get config
     try {
       const text = await this.myState.fileApi.getFileText(
         this.myState.subfolder + '/' + this.myState.yamlConfig
@@ -209,7 +231,7 @@ class MyComponent extends Vue {
     nprogress.done()
   }
 
-  private map?: mapboxgl.Map
+  private map!: mapboxgl.Map
 
   private async loadFiles() {
     try {
@@ -240,22 +262,29 @@ class MyComponent extends Vue {
   private geojson: any = {}
 
   private async processShapefile(files: any) {
-    this.myState.loadingText = 'Converting to GeoJSON...'
+    this.myState.loadingText = 'Loading shapefile...'
     const geojson = await shapefile.read(files.shpFile, files.dbfFile)
 
     this.myState.loadingText = 'Converting coordinates...'
     let errCount = 0
+
+    console.log({ geojson })
+
     for (const feature of geojson.features) {
       // 'id' column used for lookup, unless idColumn is set in YAML
       if (!this.vizDetails.idColumn && feature.properties)
         this.vizDetails.idColumn = Object.keys(feature.properties)[0]
 
-      // Save id somewhere helpful
-      // if (feature.properties) feature.id = feature.properties[this.vizDetails.idColumn]
+      // Save ID somewhere more helpful
+      if (feature.properties && this.vizDetails.idColumn) {
+        feature.id = feature.properties[this.vizDetails.idColumn]
+      }
 
       try {
         if (feature.geometry.type === 'MultiPolygon') {
           this.convertMultiPolygonCoordinatesToWGS84(feature)
+        } else if (feature.geometry.type === 'LineString') {
+          this.convertLineStringCoordinatesToWGS84(feature)
         } else {
           this.convertPolygonCoordinatesToWGS84(feature)
         }
@@ -269,6 +298,20 @@ class MyComponent extends Vue {
     }
 
     return geojson
+  }
+
+  private convertLineStringCoordinatesToWGS84(feature: any) {
+    const newCoords: any = []
+    const coordinates = feature.geometry.coordinates
+    for (const origCoord of coordinates) {
+      const lnglat = Coords.toLngLat(this.vizDetails.projection, origCoord) as any
+      newCoords.push(lnglat)
+      this.updateMapExtent(lnglat)
+    }
+
+    // replace existing coords
+    coordinates.length = 0
+    coordinates.push(...newCoords)
   }
 
   private convertPolygonCoordinatesToWGS84(polygon: any) {
@@ -316,9 +359,12 @@ class MyComponent extends Vue {
     return newCoords
   }
 
+  private dataset: any[] = []
+
   // Called immediately after MapBox is ready to draw the map
   private async mapIsReady() {
     const inputs = await this.loadFiles()
+
     if (!inputs) {
       this.myState.loadingText = 'Problem loading files, sorry'
       return
@@ -326,18 +372,45 @@ class MyComponent extends Vue {
 
     this.geojson = await this.processShapefile(inputs)
 
-    this.calculateLinkProperties(inputs.shpFile)
-    this.addJsonToMap(inputs.shpFile)
+    this.setMapExtent()
+
+    this.dataset = this.processCSVFile(inputs)
+
+    this.calculateLinkProperties(this.geojson)
+    this.addJsonToMap(this.geojson)
     this.setupMapListeners()
 
     this.myState.loadingText = ''
     nprogress.done()
   }
 
+  private processCSVFile(inputs: { linkFlows: string }) {
+    // determine delimiter
+    let delimiter = ','
+    try {
+      const header = inputs.linkFlows.substring(0, inputs.linkFlows.indexOf('\n'))
+      if (header.indexOf(',') > -1) delimiter = ','
+      else if (header.indexOf(';') > -1) delimiter = ';'
+      else if (header.indexOf('\t') > -1) delimiter = '\t'
+      else if (header.indexOf(' ') > -1) delimiter = ' '
+    } catch (e) {
+      // use comma
+      delimiter = ','
+    }
+
+    // convert CSV
+    const content = Papaparse.parse(inputs.linkFlows, {
+      header: true,
+      dynamicTyping: true,
+      delimiter,
+    }).data
+    console.log('finished reading CSV')
+    return content
+  }
+
   private calculateLinkProperties(json: any) {
-    console.log(json)
     for (const link of json.features) {
-      link.properties.width = 20 // link.properties['base case (demand)_agents'] / 200
+      link.properties.width = 3 // link.properties['base case (demand)_agents'] / 200
       if (link.properties.width < 3) link.properties.width = 2
       link.properties.vc = 0.8
       // (1.0 * link.properties['base case (demand)_agents']) / link.properties.capacity
@@ -474,7 +547,7 @@ export default MyComponent
   flex-direction: column;
 }
 
-#linkmymap {
+.mymap {
   height: 100%;
   width: 100%;
 }
