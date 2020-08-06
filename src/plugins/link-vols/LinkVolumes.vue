@@ -359,7 +359,7 @@ class MyComponent extends Vue {
     return newCoords
   }
 
-  private dataset: any[] = []
+  private dataset: any = {}
 
   // Called immediately after MapBox is ready to draw the map
   private async mapIsReady() {
@@ -374,7 +374,7 @@ class MyComponent extends Vue {
 
     this.setMapExtent()
 
-    this.dataset = this.processCSVFile(inputs)
+    this.processCSVFile(inputs)
 
     this.calculateLinkProperties(this.geojson)
     this.addJsonToMap(this.geojson)
@@ -385,6 +385,8 @@ class MyComponent extends Vue {
   }
 
   private processCSVFile(inputs: { linkFlows: string }) {
+    this.dataset = {}
+
     // determine delimiter
     let delimiter = ','
     try {
@@ -403,17 +405,29 @@ class MyComponent extends Vue {
       header: true,
       dynamicTyping: true,
       delimiter,
-    }).data
-    console.log('finished reading CSV')
-    return content
+    })
+    console.log('finished reading CSV', content)
+
+    const key = content.meta.fields[0]
+
+    for (const row of content.data) {
+      this.dataset[row[key]] = row
+    }
+    console.log({ dataset: this.dataset })
   }
 
   private calculateLinkProperties(json: any) {
+    console.log('features: ', json.features.length)
     for (const link of json.features) {
-      link.properties.width = 3 // link.properties['base case (demand)_agents'] / 200
-      if (link.properties.width < 3) link.properties.width = 2
-      link.properties.vc = 0.8
-      // (1.0 * link.properties['base case (demand)_agents']) / link.properties.capacity
+      const id = link.properties.Id
+
+      let width = 1
+      const values = this.dataset[id]
+      if (values) {
+        link.properties.width = Math.log(2 * values['08:00:00'])
+        if (link.properties.width < 1) link.properties.width = 1
+        link.properties.vc = values['08:00:00'] * 0.01
+      }
     }
   }
 
