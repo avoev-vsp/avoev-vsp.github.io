@@ -82,6 +82,7 @@ html {
   // overflow-y: auto;
   height: 100%;
   overscroll-behavior: contain;
+  overflow-y: auto;
 }
 
 canvas {
@@ -137,7 +138,7 @@ h3 {
 }
 
 #app {
-  background-color: white;
+  background-color: $paleBackground;
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: auto 1fr auto;
@@ -148,7 +149,6 @@ h3 {
   font-family: Roboto, Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: $paleBackground;
 }
 
 .full-page-app {
