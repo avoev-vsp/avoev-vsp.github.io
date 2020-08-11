@@ -3,7 +3,7 @@
   .map-container(v-if="!thumbnail")
     .mymap(:id="mapId")
 
-  left-data-panel.left-panel(v-if="!thumbnail && !loadingText")
+  left-data-panel.left-panel(v-if="!thumbnail && !myState.loadingText")
    .dashboard-panel
     .info-header
       h3(style="text-align: center; padding: 0.5rem 3rem; font-weight: normal;color: white;")
@@ -93,7 +93,7 @@ class MyComponent extends Vue {
     subfolder: this.subfolder,
     yamlConfig: this.yamlConfig,
     thumbnail: this.thumbnail,
-    loadingText: '',
+    loadingText: 'Link Volumes',
     visualization: null,
     project: {},
   }

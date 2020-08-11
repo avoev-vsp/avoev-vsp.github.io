@@ -67,12 +67,13 @@ class SVNFileSystem {
     // This can throw lots of errors; we are not going to catch them
     // here so the code further up can deal with errors properly.
     // "Throw early, catch late."
+    console.log('HTTP: get', scaryPath)
     let stillScaryPath = scaryPath
 
     // don't download any files!
     if (!stillScaryPath.endsWith('/')) stillScaryPath += '/'
 
-    const response = await this._getFileResponse(stillScaryPath).then()
+    const response = await this._getFileResponse(stillScaryPath)
     const htmlListing = await response.text()
 
     return this.buildListFromHtml(htmlListing)

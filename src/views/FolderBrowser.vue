@@ -303,10 +303,12 @@ export default class VueComponent extends Vue {
     if (!this.myState.svnRoot) return []
 
     this.myState.isLoading = true
+    this.myState.errorStatus = ''
+    // this.myState.folders = []
+    this.myState.files = []
 
     try {
       const folderContents = await this.myState.svnRoot.getDirectory(this.myState.subfolder)
-
       // hide dot folders
       const folders = folderContents.dirs.filter(f => !f.startsWith('.')).sort()
       const files = folderContents.files.filter(f => !f.startsWith('.')).sort()
