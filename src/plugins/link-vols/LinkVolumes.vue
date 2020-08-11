@@ -3,6 +3,20 @@
   .map-container(v-if="!thumbnail")
     .mymap(:id="mapId")
 
+  left-data-panel.left-panel(v-if="!thumbnail && !loadingText")
+   .dashboard-panel
+    .info-header
+      h3(style="text-align: center; padding: 0.5rem 3rem; font-weight: normal;color: white;")
+        | {{this.vizDetails.title ? this.vizDetails.title : 'O/D Flows'}}
+
+    .info-description(style="padding: 0px 0.5rem;" v-if="this.vizDetails.description")
+      p.description {{ this.vizDetails.description }}
+
+    .widgets
+      h4.heading Time of day
+      h4.heading Scale
+      h4.heading Etc
+
   .status-blob(v-show="myState.loadingText")
     h4 {{ myState.loadingText }}
 
@@ -96,6 +110,10 @@ class MyComponent extends Vue {
 
   private destroyed() {
     globalStore.commit('setFullScreen', false)
+  }
+
+  private async zmounted() {
+    globalStore.commit('setFullScreen', !this.thumbnail)
   }
 
   private async mounted() {
@@ -198,7 +216,7 @@ class MyComponent extends Vue {
         bearing: 0,
         container: this.mapId,
         logoPosition: 'bottom-right',
-        style: 'mapbox://styles/mapbox/light-v9',
+        style: 'mapbox://styles/mapbox/streets-v11',
         pitch: 0,
       })
 
@@ -459,7 +477,7 @@ class MyComponent extends Vue {
           'line-opacity': 1.0,
           'line-width': ['get', 'width'],
           'line-offset': ['+', 0.25, ['*', 0.5, ['get', 'width']]],
-          'line-color': ['case', ['boolean', ['feature-state', 'hover'], false], '#fb0', '#66a'],
+          'line-color': ['case', ['boolean', ['feature-state', 'hover'], false], '#fb0', '#559'],
         },
         layout: {
           'line-cap': 'round',
@@ -597,7 +615,7 @@ export default MyComponent
 <style scoped>
 #link-container {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: auto 1fr;
   grid-template-rows: 1fr;
   width: 100%;
   min-height: 200px;
@@ -606,7 +624,7 @@ export default MyComponent
 
 .map-container {
   background-color: #eee;
-  grid-column: 1 / 2;
+  grid-column: 1 / 3;
   grid-row: 1 / 2;
   display: flex;
   flex-direction: column;
@@ -617,6 +635,30 @@ export default MyComponent
   width: 100%;
 }
 
+.left-panel {
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
+  display: flex;
+  flex-direction: column;
+  width: 18rem;
+  z-index: 100;
+}
+
+.info-header h3 {
+  font-size: 1.1rem;
+}
+
+.info-description {
+  margin-top: 0.5rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.widgets {
+  margin-top: 1rem;
+  margin-left: 0.5rem;
+}
+
 .status-blob {
   background-color: white;
   box-shadow: 0 0 8px #00000040;
@@ -624,7 +666,7 @@ export default MyComponent
   margin: auto 0px auto -10px;
   padding: 3rem 0px;
   text-align: center;
-  grid-column: 1 / 2;
+  grid-column: 1 / 3;
   grid-row: 1 / 2;
   z-index: 99;
   border-top: solid 1px #479ccc;
