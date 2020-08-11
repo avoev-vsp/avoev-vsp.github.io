@@ -17,7 +17,7 @@ const config: any = {
     //   thumbnail: '/tu-logo.png',
     // },
     {
-      name: 'Gladbeck',
+      name: 'AVÖV Gladbeck',
       url: 'gladbeck',
       description: 'AVÖV Projekt: Gladbeck NRW',
       svn:
@@ -26,7 +26,7 @@ const config: any = {
       thumbnail: '/thumb-gladbeck.jpg',
     },
     {
-      name: 'Vulkaneifel',
+      name: 'AVÖV Vulkaneifel',
       url: 'vulkaneifel',
       description: 'AVÖV Projekt: Vulkaneifel RP',
       svn:

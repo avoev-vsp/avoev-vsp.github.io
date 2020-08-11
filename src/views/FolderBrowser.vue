@@ -6,7 +6,8 @@
       h2 {{ globalState.breadcrumbs[globalState.breadcrumbs.length -1].label }}
       p {{ myState.svnProject.description }}
     .logo
-        img(width="300" src="/logo-avoev.png")
+        img(width="150" src="/bmvi.png")
+        img(width="250" src="/logo-avoev.png")
 
   .details(v-if="myState.svnProject")
 
@@ -21,9 +22,9 @@
         .curate-content.markdown(v-if="myState.readme" v-html="myState.readme")
 
       //- file system folders
-      h3.curate-heading(v-if="myState.folders.length")  Runs
+      h3.curate-heading(v-if="myState.folders.length > 1")  Runs
 
-      .curate-content(v-if="myState.folders.length")
+      .curate-content(v-if="myState.folders.length > 1")
         .folder(:class="{fade: myState.isLoading}"
               v-for="folder in myState.folders" :key="folder.name"
               @click="openOutputFolder(folder)")
@@ -381,7 +382,7 @@ h2 {
 
 .viz-table {
   display: grid;
-  grid-gap: 1rem;
+  grid-gap: 1.5rem;
   grid-template-columns: repeat(3, minmax(100px, 1fr));
   list-style: none;
   margin-bottom: 0px;
@@ -404,7 +405,7 @@ h2 {
 }
 
 .viz-item:hover {
-  box-shadow: 0px 0px 5px 5px rgba(0, 0, 0, 0.08), 0 3px 5px 0 rgba(0, 0, 0, 0.02);
+  box-shadow: 0px 0px 5px 5px rgba(0, 0, 0, 0.1), 0 3px 5px 0 rgba(0, 0, 0, 0.15);
   transition: box-shadow 0.1s ease-in-out;
 }
 
@@ -428,6 +429,14 @@ h2 {
 
 .logo {
   margin-left: auto;
+  vertical-align: center;
+  display: flex;
+  flex-direction: row;
+
+  img {
+    vertical-align: center;
+    margin: auto 1rem;
+  }
 }
 
 .folder {

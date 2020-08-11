@@ -9,7 +9,8 @@
         ul
           li(v-for="crumb,i in state.breadcrumbs" :key="crumb.label + crumb.url"
             @click="clickedLink(crumb.url)")
-              p {{ i === 0 ? 'Home' : crumb.label }}
+              p {{ crumb.label }}
+              // p {{ i === 0 ? 'Home' : crumb.label }}
 
   .center-area.nav-padding
     login-panel.login-panel
@@ -79,7 +80,6 @@ body,
 html {
   margin: 0px 0px;
   padding: 0px 0px;
-  // overflow-y: auto;
   height: 100%;
   overscroll-behavior: contain;
   overflow-y: auto;
@@ -94,13 +94,14 @@ html {
 }
 
 .breadcrumbs-bar {
-  background-color: #626577;
-  padding: 0.75rem 3rem;
+  background-color: $tuRed;
+  padding: 0.3rem 3rem;
+  transition: padding 0.2s ease-in-out;
 }
 
 .breadcrumb {
-  font-size: 1rem;
-  font-weight: bold;
+  font-size: 0.9rem;
+  font-weight: normal;
   margin-left: -0.5rem;
 }
 
@@ -165,8 +166,6 @@ h3 {
 }
 
 #nav {
-  height: $navHeight;
-  background-color: #626577;
   grid-column: 1 / 2;
   grid-row: 1 / 2;
   width: 100%;
