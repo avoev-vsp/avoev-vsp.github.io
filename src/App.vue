@@ -1,8 +1,6 @@
 <template lang="pug">
 #app(:class=" {'full-page-app' : state.isFullScreen}" )
   #nav
-    //- top-nav-bar#nav(v-if="!state.isFullScreen" :style="{paddingLeft: state.isFullScreen ? '0rem':''}" )
-
     .breadcrumbs-bar(v-if="state.breadcrumbs.length > 0"
                      :style="{paddingLeft: state.isFullScreen ? '0.75rem':''}")
       nav.breadcrumb(aria-label="breadcrumbs")
@@ -53,8 +51,10 @@ class App extends Vue {
   @Watch('state.isFullScreen') toggleFullScreen(isFullPage: boolean) {
     if (isFullPage) {
       document.body.classList.add('full-screen-page')
+      document.documentElement.style.overflowY = 'auto'
     } else {
       document.body.classList.remove('full-screen-page')
+      document.documentElement.style.overflowY = null as any
     }
   }
 }
@@ -82,7 +82,6 @@ html {
   padding: 0px 0px;
   height: 100%;
   overscroll-behavior: contain;
-  overflow-y: auto;
 }
 
 canvas {
