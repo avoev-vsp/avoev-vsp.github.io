@@ -48,7 +48,7 @@ class App extends Vue {
     this.$router.push({ path })
   }
 
-  @Watch('state.isFullScreen') toggleFullScreen(isFullPage: boolean) {
+  @Watch('state.isFullScreen') async toggleFullScreen(isFullPage: boolean) {
     if (isFullPage) {
       document.body.classList.add('full-screen-page')
       document.documentElement.style.overflowY = 'auto'
@@ -56,6 +56,7 @@ class App extends Vue {
       document.body.classList.remove('full-screen-page')
       document.documentElement.style.overflowY = null as any
     }
+    await this.$nextTick()
   }
 }
 export default App
