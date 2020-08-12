@@ -20,7 +20,7 @@
         @change='bounceTimeSlider')
       label.checkbox
          input(type="checkbox" v-model="showTimeRange")
-         | &nbsp;Show range (DE)
+         | &nbsp;Zeitraum
 
       h4.heading Scale
       h4.heading Usw
@@ -323,12 +323,8 @@ class MyComponent extends Vue {
         if (header === value[1]) include = false
       }
 
-      // this.map.setPaintProperty('spider-layer', 'line-width', ['*', widthFactor, sumElements])
-      // this.map.setPaintProperty('spider-layer', 'line-offset', [
-      //   '*',
-      //   0.5 * widthFactor,
-      //   sumElements,
-      // ])
+      this.map.setPaintProperty('my-layer', 'line-width', ['*', widthFactor, sumElements])
+      this.map.setPaintProperty('my-layer', 'line-offset', ['*', 0.5 * widthFactor, sumElements])
     }
   }
 
