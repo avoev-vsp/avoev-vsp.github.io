@@ -6,8 +6,7 @@
       h2 {{ globalState.breadcrumbs[globalState.breadcrumbs.length -1].label }}
       p {{ myState.svnProject.description }}
     .logo
-        img(width="150" src="/bmvi.png")
-        img(width="250" src="/logo-avoev.png")
+        img(height=160 src="/logo-avoev.png")
 
   .details(v-if="myState.svnProject")
 
@@ -359,9 +358,10 @@ export default class VueComponent extends Vue {
 <style scoped lang="scss">
 @import '@/styles.scss';
 
-// #project-component {
-//   background-color: #8f8fa7;
-// }
+#project-component {
+  display: flex;
+  flex-direction: column;
+}
 
 h3,
 h4 {
@@ -429,18 +429,6 @@ h2 {
   }
 }
 
-.logo {
-  margin-left: auto;
-  vertical-align: center;
-  display: flex;
-  flex-direction: row;
-
-  img {
-    vertical-align: center;
-    margin: auto 1rem;
-  }
-}
-
 .folder {
   cursor: pointer;
   display: flex;
@@ -458,9 +446,11 @@ h2 {
 
 .project-bar {
   display: flex;
+  flex-direction: row;
   margin-bottom: 1rem;
   padding: 1rem 3rem 1.5rem 0rem;
   background-color: white;
+  max-height: 10rem;
   // border-bottom: 1px solid $themeColorPale;
   z-index: 10000;
   box-shadow: 0px 0px 8px 8px rgba(0, 0, 0, 0.06);
@@ -471,7 +461,18 @@ h2 {
   margin-top: -0.25rem;
 }
 
+.logo {
+  margin-left: auto;
+  margin-right: 0;
+  img {
+    height: 100%;
+    width: 100%;
+    object-fit: contain;
+  }
+}
+
 .details {
+  flex: 1;
   padding: 0rem 3rem 3rem 3rem;
 }
 
