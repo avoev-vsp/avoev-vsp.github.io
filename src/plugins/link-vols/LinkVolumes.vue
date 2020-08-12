@@ -4,9 +4,8 @@
     .mymap(:id="mapId")
 
   left-data-panel.left-panel(v-if="!thumbnail && !myState.loadingText")
-   .dashboard-panel
     .info-header
-      h3(style="text-align: center; padding: 0.5rem 3rem; font-weight: normal;color: white;")
+      h3(style="text-align: center; padding: 0.5rem 1rem; font-weight: normal;color: white;")
         | {{this.vizDetails.title ? this.vizDetails.title : 'O/D Flows'}}
 
     .info-description(style="padding: 0px 0.5rem;" v-if="this.vizDetails.description")
@@ -23,7 +22,9 @@
          | &nbsp;Zeitraum
 
       h4.heading Scale
-      h4.heading Usw
+      scale-slider.time-slider(v-if="headers.length > 0"
+        :stops='SCALE_STOPS'
+        @change='bounceScale')
 
   .status-blob(v-show="myState.loadingText")
     h4 {{ myState.loadingText }}
@@ -36,7 +37,7 @@
 import * as shapefile from 'shapefile'
 import { debounce } from 'debounce'
 import { FeatureCollection, Feature } from 'geojson'
-import mapboxgl, { LngLat, MapMouseEvent, PositionOptions } from 'mapbox-gl'
+import mapboxgl, { LngLat, MapMouseEvent, PositionOptions, MapLayerMouseEvent } from 'mapbox-gl'
 import nprogress from 'nprogress'
 import Papaparse from 'papaparse'
 import proj4 from 'proj4'
@@ -54,6 +55,7 @@ import { FileSystem, SVNProject, VisualizationPlugin } from '@/Globals'
 import HTTPFileSystem from '@/util/HTTPFileSystem'
 
 import globalStore from '@/store'
+import { isNumber } from '@turf/turf'
 
 interface VolumePlotYaml {
   shpFile: string
@@ -70,9 +72,6 @@ interface MapElement {
   lngLat: LngLat
   features: any[]
 }
-
-const TOTAL_MSG = 'Alle >>'
-const SCALE_WIDTH = [1, 3, 5, 10, 25, 50, 100, 150, 200, 300, 400, 450, 500]
 
 @Component({
   components: {
@@ -93,6 +92,10 @@ class MyComponent extends Vue {
 
   @Prop({ required: false })
   private thumbnail!: boolean
+
+  private TOTAL_MSG = 'Alle >>'
+  private SCALE_STOPS = [0.01, 0.1, 0.5, 1.0, 2, 5]
+  private WIDTH_SCALE = 0.01
 
   private globalState = globalStore.state
 
@@ -233,6 +236,8 @@ class MyComponent extends Vue {
         pitch: 0,
       })
 
+      this.findCenter()
+
       this.map.on('style.load', this.mapIsReady)
       this.map.addControl(new mapboxgl.NavigationControl(), 'top-right')
     } catch (e) {
@@ -240,6 +245,29 @@ class MyComponent extends Vue {
     }
   }
 
+  private findCenter() {
+    try {
+      const extent = localStorage.getItem(this.$route.fullPath + '-bounds')
+      if (extent) {
+        const lnglat = JSON.parse(extent)
+
+        const padding = { top: 5, bottom: 5, right: 5, left: 30 }
+
+        if (this.thumbnail) {
+          this.map.fitBounds(lnglat, {
+            animate: false,
+          })
+        } else {
+          this.map.fitBounds(lnglat, {
+            padding,
+            animate: false,
+          })
+        }
+      }
+    } catch (e) {
+      // no real consequence
+    }
+  }
   private async getVizDetails() {
     try {
       const text = await this.myState.fileApi.getFileText(
@@ -255,8 +283,6 @@ class MyComponent extends Vue {
 
     this.$emit('title', this.vizDetails.title)
 
-    this.vizDetails.scaleFactor = this.vizDetails.scaleFactor
-    this.vizDetails.projection = this.vizDetails.projection
     this.vizDetails.idColumn = this.vizDetails.idColumn ? this.vizDetails.idColumn : 'id'
 
     nprogress.done()
@@ -294,15 +320,21 @@ class MyComponent extends Vue {
 
   private headers: string[] = []
   private showTimeRange = false
-  private bounceTimeSlider = debounce(this.changedTimeSlider, 100)
-  private currentTimeBin = TOTAL_MSG
-  private scaleValues = SCALE_WIDTH
-  private currentScale = SCALE_WIDTH[0]
+  private bounceTimeSlider = debounce(this.changedTimeSlider, 200)
+  private bounceScale = debounce(this.changedScale, 200)
+  private currentTimeBin = this.TOTAL_MSG
+  private currentScale = this.SCALE_STOPS[0]
+
+  private changedScale(value: any) {
+    this.currentScale = value
+    this.changedTimeSlider(this.currentTimeBin)
+  }
 
   private changedTimeSlider(value: any) {
-    if (value === this.currentTimeBin) console.log(value)
+    // if (value === this.currentTimeBin) return
+
     this.currentTimeBin = value
-    const widthFactor = 0.02 // (this.currentScale / 500) * this.vizDetails.scaleFactor
+    const widthFactor = this.WIDTH_SCALE * this.currentScale
 
     if (this.showTimeRange == false) {
       this.map.setPaintProperty('my-layer', 'line-width', ['*', widthFactor, ['get', value]])
@@ -316,7 +348,7 @@ class MyComponent extends Vue {
         if (header === value[0]) include = true
 
         // don't double-count the total
-        if (header === TOTAL_MSG) continue
+        if (header === this.TOTAL_MSG) continue
 
         if (include) sumElements.push(['get', header])
 
@@ -334,9 +366,7 @@ class MyComponent extends Vue {
 
     // data is in format: o,d, value[1], value[2], value[3]...
     const headers = lines[0].split(separator).map(a => a.trim())
-    this.headers = [TOTAL_MSG].concat(headers.slice(1))
-
-    console.log(this.headers)
+    this.headers = [this.TOTAL_MSG].concat(headers.slice(1))
   }
 
   private async processShapefile(files: any) {
@@ -502,7 +532,6 @@ class MyComponent extends Vue {
       const numericalId = this.idLookup[originalId]
       this.dataset[numericalId] = row
     }
-    console.log({ dataset: this.dataset })
   }
 
   private calculateLinkProperties(json: any) {
@@ -520,8 +549,8 @@ class MyComponent extends Vue {
             daily += values[key]
           }
         }
-        link.properties[TOTAL_MSG] = daily
-        link.properties.width = 0.02 * daily
+        link.properties[this.TOTAL_MSG] = daily
+        link.properties.width = this.WIDTH_SCALE * daily
         // Math.log(2 * values['08:00:00'])
         if (link.properties.width < 2) link.properties.width = 2
       }
@@ -559,7 +588,7 @@ class MyComponent extends Vue {
     const parent = this
 
     this.map.on('click', layerName, (e: MapMouseEvent) => {
-      // this.clickedOnTaz(e)
+      this.clickedOnElement(e)
     })
 
     // turn "hover cursor" into a pointer, so user knows they can click.
@@ -611,48 +640,74 @@ class MyComponent extends Vue {
   private hoveredStateId: any = null
   private _popup: any
 
-  /*
   // clickedOnTaz: called when user... clicks on the taz
-  private clickedOnTaz(e: MapMouseEvent) {
-    console.log(e)
-
+  private async clickedOnElement(e: MapLayerMouseEvent) {
+    console.log(e.features)
+    if (!e.features) return
     // cancel old close-popup event because it messes with event ordering
-    // if (_popup) _popup.off('close', closePopupEvent);
-
-    // the browser delivers some details that we need, in the fn argument 'e'
-    const props = e.features[0].properties
+    // if (this._popup) this._popup.off('close', this.closePopupEvent);
 
     // highlight the zone that we clicked on, using this weird filter thing in MapBox API
     // see https://www.mapbox.com/mapbox-gl-js/example/hover-styles/
     // mymap.setFilter("highlight-layer", ["==", "id", props.id]);
 
-    // build HTML of popup window
-    let html = `<h4>Raw Values:</h4>`
-    html +=
-      'Freespeed: ' +
-      props.Freespeed.toFixed(2) +
-      '<br>' +
-      'capacity: ' +
-      props.capacity.toFixed(2) +
-      '<br>' +
-      'demand: ' +
-      props['base case (demand)_agents']
-
-    //   for (let altname in _activeDataset.alternatives) {
-    //     let column = _activeDataset.alternatives[altname].column;
-    //     let value = props[column].toFixed(4);
-    //     html += `<p class="popup-value"><b>${altname}:</b> ${value}</p>`;
-    //   }
-
-    _popup = new mapboxgl.Popup({ closeOnClick: true }).setLngLat(e.lngLat).setHTML(html)
+    const feature = e.features[0]
 
     // add a close-event, to remove highlight if user closes the popup
     // _popup.on('close', closePopupEvent);
 
+    // calc the data
+    const data: any[] = []
+    let daily = 0
+
+    if (feature.properties) {
+      const columns = this.headers
+      for (const column of columns) {
+        if (!isNumber(column)) continue
+        const trips = feature.properties[column]
+        daily += trips
+        if (!daily) continue // don't start graph before data fills in
+        data.push({ hour: Number(column), trips })
+      }
+    }
+
+    if (!daily) daily = 0
+    // build HTML of popup window
+    let html =
+      `<p style="text-align: center; min-width: max-content;"><b>Trips by Time of Day</b><br/>` +
+      `Total daily trips: ` +
+      daily +
+      `</p>`
+
+    if (daily) html += `<div id="chart" style="width: 300px; height:200px;"></div>`
+
     // create the popup!
-    _popup.addTo(map)
+    if (this._popup) this._popup.remove()
+    this._popup = new mapboxgl.Popup({ closeOnClick: true }).setLngLat(e.lngLat).setHTML(html)
+    this._popup.addTo(this.map)
+
+    console.log({ data })
+    // @ts-ignore
+    this.currentChart = new Morris.Bar({
+      // ID of the element in which to draw the chart.
+      element: 'chart',
+      data: data,
+      stacked: true,
+      xkey: 'hour', // The name of the data record attribute that contains x-values.
+      ykeys: ['trips'], // A list of names of data record attributes that contain y-values.
+      // ymax: 100,
+      labels: ['Trips'], // 'Dropoffs'],
+      barColors: ['#3377cc'], // , '#cc0033'],
+      xLabels: 'Uhr',
+      // xLabelAngle: 60,
+      // xLabelFormat: dateFmt,
+      // yLabelFormat: yFmt,
+      hideHover: true,
+      parseTime: true,
+      resize: true,
+    })
   }
-  */
+  private currentChart: any = {}
 }
 
 // !register plugin!
@@ -735,6 +790,13 @@ export default MyComponent
   z-index: 99;
   border-top: solid 1px #479ccc;
   border-bottom: solid 1px #479ccc;
+}
+
+.checkbox {
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
 }
 
 .status-blob p,

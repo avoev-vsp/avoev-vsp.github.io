@@ -244,6 +244,10 @@ h3 {
   }
 }
 
+.mapboxgl-popup-content {
+  width: min-content !important;
+}
+
 @media only screen and (max-width: 640px) {
   .breadcrumbs-bar {
     padding-left: 1rem;
