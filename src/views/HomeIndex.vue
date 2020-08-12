@@ -10,7 +10,7 @@
         img(src="/logo-avoev.png")
         h2.readme(v-html="readme")
 
-        h2 Wählen Sie Ihre Stadt aus:
+        h2 Wählen Sie das Untersuchungsgebiet aus:
         svn-projects.gap
 
         h2 Mehr Info
