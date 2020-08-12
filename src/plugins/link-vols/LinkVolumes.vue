@@ -13,9 +13,17 @@
       p.description {{ this.vizDetails.description }}
 
     .widgets
-      h4.heading Time of day
+      h4.heading Uhrzeit
+      time-slider.time-slider(v-if="headers.length > 0"
+        :useRange='showTimeRange'
+        :stops='headers'
+        @change='bounceTimeSlider')
+      label.checkbox
+         input(type="checkbox" v-model="showTimeRange")
+         | &nbsp;Show range (DE)
+
       h4.heading Scale
-      h4.heading Etc
+      h4.heading Usw
 
   .status-blob(v-show="myState.loadingText")
     h4 {{ myState.loadingText }}
@@ -40,6 +48,7 @@ import yaml from 'yaml'
 import Coords from '@/util/Coords'
 import LeftDataPanel from '@/components/LeftDataPanel.vue'
 import ScaleSlider from '@/components/ScaleSlider.vue'
+import TimeSlider from './TimeSlider.vue'
 
 import { FileSystem, SVNProject, VisualizationPlugin } from '@/Globals'
 import HTTPFileSystem from '@/util/HTTPFileSystem'
@@ -62,10 +71,14 @@ interface MapElement {
   features: any[]
 }
 
+const TOTAL_MSG = 'Alle >>'
+const SCALE_WIDTH = [1, 3, 5, 10, 25, 50, 100, 150, 200, 300, 400, 450, 500]
+
 @Component({
   components: {
     LeftDataPanel,
     ScaleSlider,
+    TimeSlider,
   },
 })
 class MyComponent extends Vue {
@@ -279,6 +292,57 @@ class MyComponent extends Vue {
 
   private geojson: any = {}
 
+  private headers: string[] = []
+  private showTimeRange = false
+  private bounceTimeSlider = debounce(this.changedTimeSlider, 100)
+  private currentTimeBin = TOTAL_MSG
+  private scaleValues = SCALE_WIDTH
+  private currentScale = SCALE_WIDTH[0]
+
+  private changedTimeSlider(value: any) {
+    if (value === this.currentTimeBin) console.log(value)
+    this.currentTimeBin = value
+    const widthFactor = 0.02 // (this.currentScale / 500) * this.vizDetails.scaleFactor
+
+    if (this.showTimeRange == false) {
+      this.map.setPaintProperty('my-layer', 'line-width', ['*', widthFactor, ['get', value]])
+      this.map.setPaintProperty('my-layer', 'line-offset', ['*', 0.5 * widthFactor, ['get', value]])
+    } else {
+      const sumElements: any = ['+']
+
+      // build the summation expressions: e.g. ['+', ['get', '1'], ['get', '2']]
+      let include = false
+      for (const header of this.headers) {
+        if (header === value[0]) include = true
+
+        // don't double-count the total
+        if (header === TOTAL_MSG) continue
+
+        if (include) sumElements.push(['get', header])
+
+        if (header === value[1]) include = false
+      }
+
+      // this.map.setPaintProperty('spider-layer', 'line-width', ['*', widthFactor, sumElements])
+      // this.map.setPaintProperty('spider-layer', 'line-offset', [
+      //   '*',
+      //   0.5 * widthFactor,
+      //   sumElements,
+      // ])
+    }
+  }
+
+  private processHeaders(csvData: string) {
+    const lines = csvData.split('\n')
+    const separator = lines[0].indexOf(';') > 0 ? ';' : ','
+
+    // data is in format: o,d, value[1], value[2], value[3]...
+    const headers = lines[0].split(separator).map(a => a.trim())
+    this.headers = [TOTAL_MSG].concat(headers.slice(1))
+
+    console.log(this.headers)
+  }
+
   private async processShapefile(files: any) {
     this.myState.loadingText = 'Loading shapefile...'
     const geojson = await shapefile.read(files.shpFile, files.dbfFile)
@@ -400,8 +464,9 @@ class MyComponent extends Vue {
     this.setMapExtent()
 
     this.processCSVFile(inputs)
-
+    this.processHeaders(inputs.linkFlows)
     this.calculateLinkProperties(this.geojson)
+
     this.addJsonToMap(this.geojson)
     this.setupMapListeners()
 
@@ -452,10 +517,17 @@ class MyComponent extends Vue {
       link.properties.width = 2
       const values = this.dataset[id]
       if (values) {
-        link.properties.width = 0.075 * values['09:00:00']
+        let daily = 0
+        for (const key of Object.keys(values)) {
+          if (!isNaN(values[key])) {
+            link.properties[key] = values[key]
+            daily += values[key]
+          }
+        }
+        link.properties[TOTAL_MSG] = daily
+        link.properties.width = 0.02 * daily
         // Math.log(2 * values['08:00:00'])
-        if (link.properties.width < 3) link.properties.width = 3
-        // link.properties.vc = values['08:00:00'] * 0.01
+        if (link.properties.width < 2) link.properties.width = 2
       }
     }
   }
@@ -468,33 +540,20 @@ class MyComponent extends Vue {
       type: 'geojson',
     })
 
-    this.map.addLayer(
-      {
-        id: 'my-layer',
-        source: 'my-data',
-        type: 'line',
-        paint: {
-          'line-opacity': 1.0,
-          'line-width': ['get', 'width'],
-          'line-offset': ['+', 0.25, ['*', 0.5, ['get', 'width']]],
-          'line-color': ['case', ['boolean', ['feature-state', 'hover'], false], '#fb0', '#559'],
-        },
-        layout: {
-          'line-cap': 'round',
-        },
-        // {
-        //   property: 'vc',
-        //   stops: [
-        //     [0.4, '#04c'],
-        //     [0.8, '#084'],
-        //     [1.0, '#0a0'],
-        //     [1.3, '#cc0'],
-        //   ],
-        // },
-        // });
-      }
-      // 'road-primary'
-    ) // layer gets added just *above* this MapBox-defined layer.
+    this.map.addLayer({
+      id: 'my-layer',
+      source: 'my-data',
+      type: 'line',
+      paint: {
+        'line-opacity': 1.0,
+        'line-width': ['get', 'width'],
+        'line-offset': ['+', 0.25, ['*', 0.5, ['get', 'width']]],
+        'line-color': ['case', ['boolean', ['feature-state', 'hover'], false], '#fb0', '#559'],
+      },
+      layout: {
+        'line-cap': 'round',
+      },
+    }) // layer gets added just *above* this MapBox-defined layer.
   }
 
   private setupMapListeners() {
@@ -635,6 +694,11 @@ export default MyComponent
   width: 100%;
 }
 
+.widgets h4 {
+  font-weight: bold;
+  margin-top: 2rem;
+}
+
 .left-panel {
   grid-column: 1 / 2;
   grid-row: 1 / 2;
@@ -644,8 +708,12 @@ export default MyComponent
   z-index: 100;
 }
 
+.info-header {
+  background-color: rgb(34, 85, 85);
+}
+
 .info-header h3 {
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .info-description {
