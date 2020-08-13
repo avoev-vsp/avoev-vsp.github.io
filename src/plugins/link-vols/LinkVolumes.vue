@@ -26,6 +26,10 @@
         :stops='SCALE_STOPS'
         @change='bounceScale')
 
+      //- h4.heading Täglich insgesamt
+      //- #summary-chart
+      //- p.tiny Tägliche Gesamtfahrten: {{ dailyGrandTotal }}
+
   .status-blob(v-show="myState.loadingText")
     h4 {{ myState.loadingText }}
 
@@ -497,8 +501,42 @@ class MyComponent extends Vue {
     this.setupMapListeners()
 
     this.myState.loadingText = ''
+
+    await this.$nextTick()
+    // this.addDailyChart()
     nprogress.done()
   }
+
+  private dailyGrandTotal = 0
+
+  // private addDailyChart() {
+  //   const data = Object.keys(this.dailyTotals).map((a: any) => {
+  //     this.dailyGrandTotal += this.dailyTotals[a]
+  //     return { hour: a, trips: this.dailyTotals[a] }
+  //   })
+
+  //   // @ts-ignore
+  //   const summaryChart = new Morris.Bar({
+  //     // ID of the element in which to draw the chart.
+  //     element: 'summary-chart',
+  //     data: data,
+  //     stacked: true,
+  //     xkey: 'hour', // The name of the data record attribute that contains x-values.
+  //     ykeys: ['trips'], // A list of names of data record attributes that contain y-values.
+  //     // ymax: 100,
+  //     labels: ['Trips'], // 'Dropoffs'],
+  //     barColors: ['#3377cc'], // , '#cc0033'],
+  //     xLabels: 'Uhr',
+  //     xLabelAngle: 60,
+  //     xLabelFormat: (row: any) => {
+  //       return row.x + ':00'
+  //     },
+  //     // yLabelFormat: yFmt,
+  //     hideHover: true,
+  //     parseTime: true,
+  //     resize: true,
+  //   })
+  // }
 
   private processCSVFile(inputs: { linkFlows: string }) {
     this.dataset = {}
@@ -534,6 +572,8 @@ class MyComponent extends Vue {
     }
   }
 
+  private dailyTotals: any[] = []
+
   private calculateLinkProperties(json: any) {
     console.log('features: ', json.features.length)
     for (const link of json.features) {
@@ -543,10 +583,14 @@ class MyComponent extends Vue {
       const values = this.dataset[id]
       if (values) {
         let daily = 0
-        for (const key of Object.keys(values)) {
+        for (const key of Object.keys(values) as any) {
           if (!isNaN(values[key])) {
             link.properties[key] = values[key]
             daily += values[key]
+
+            // record global totals too
+            if (!this.dailyTotals[key]) this.dailyTotals[key] = 0
+            this.dailyTotals[key] += values[key]
           }
         }
         link.properties[this.TOTAL_MSG] = daily
@@ -679,7 +723,7 @@ class MyComponent extends Vue {
       daily +
       `</p>`
 
-    if (daily) html += `<div id="chart" style="width: 300px; height:200px;"></div>`
+    if (daily) html += `<div id="chart" style="width: 300px; height:250px;"></div>`
 
     // create the popup!
     if (this._popup) this._popup.remove()
@@ -699,9 +743,10 @@ class MyComponent extends Vue {
       labels: ['Trips'], // 'Dropoffs'],
       barColors: ['#3377cc'], // , '#cc0033'],
       xLabels: 'Uhr',
-      // xLabelAngle: 60,
-      // xLabelFormat: dateFmt,
-      // yLabelFormat: yFmt,
+      xLabelAngle: 90,
+      xLabelFormat: (row: any) => {
+        return row.x + ':00'
+      },
       hideHover: true,
       parseTime: true,
       resize: true,
@@ -778,6 +823,14 @@ export default MyComponent
   margin-left: 0.5rem;
 }
 
+#summary-chart {
+  height: 225px;
+}
+
+.tiny {
+  font-size: 0.8rem;
+  text-align: center;
+}
 .status-blob {
   background-color: white;
   box-shadow: 0 0 8px #00000040;
