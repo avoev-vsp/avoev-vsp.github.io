@@ -47,7 +47,7 @@
                     @title="updateTitle(index, $event)")
 
       //- individual links to files in this folder
-      h3.curate-heading(v-if="myState.files.length") Datein
+      h3.curate-heading(v-if="myState.files.length") Dateien
 
       .curate-content(v-if="myState.files.length")
         .file(:class="{fade: myState.isLoading}"
