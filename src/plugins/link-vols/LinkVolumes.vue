@@ -21,7 +21,7 @@
          input(type="checkbox" v-model="showTimeRange")
          | &nbsp;Zeitraum
 
-      h4.heading Scale
+      h4.heading Linienbreiten
       scale-slider.time-slider(v-if="headers.length > 0"
         :stops='SCALE_STOPS'
         @change='bounceScale')
@@ -98,7 +98,7 @@ class MyComponent extends Vue {
   private thumbnail!: boolean
 
   private TOTAL_MSG = 'Alle >>'
-  private SCALE_STOPS = [0.01, 0.1, 0.5, 1.0, 2, 5]
+  private SCALE_STOPS = [0.01, 0.1, 0.2, 0.5, 1.0, 2, 5, 10, 100]
   private WIDTH_SCALE = 0.01
 
   private globalState = globalStore.state
@@ -380,7 +380,7 @@ class MyComponent extends Vue {
     this.myState.loadingText = 'Converting coordinates...'
     let errCount = 0
 
-    console.log({ geojson })
+    // console.log({ geojson })
 
     this.vizDetails.idColumn = 'Id'
 
@@ -498,6 +498,7 @@ class MyComponent extends Vue {
     this.calculateLinkProperties(this.geojson)
 
     this.addJsonToMap(this.geojson)
+    this.changedScale(1)
     this.setupMapListeners()
 
     this.myState.loadingText = ''
@@ -560,9 +561,10 @@ class MyComponent extends Vue {
       dynamicTyping: true,
       delimiter,
     })
-    console.log('finished reading CSV', content)
+    // console.log('finished reading CSV', content)
 
     const key = content.meta.fields[0]
+    this.idColumn = key
 
     for (const row of content.data) {
       // mapbox requires numerical IDs
@@ -574,16 +576,18 @@ class MyComponent extends Vue {
 
   private dailyTotals: any[] = []
 
+  private idColumn = ''
+
   private calculateLinkProperties(json: any) {
-    console.log('features: ', json.features.length)
     for (const link of json.features) {
       const id = link.id
 
-      link.properties.width = 2
       const values = this.dataset[id]
       if (values) {
         let daily = 0
         for (const key of Object.keys(values) as any) {
+          if (key === this.idColumn) continue
+
           if (!isNaN(values[key])) {
             link.properties[key] = values[key]
             daily += values[key]
@@ -594,9 +598,6 @@ class MyComponent extends Vue {
           }
         }
         link.properties[this.TOTAL_MSG] = daily
-        link.properties.width = this.WIDTH_SCALE * daily
-        // Math.log(2 * values['08:00:00'])
-        if (link.properties.width < 2) link.properties.width = 2
       }
     }
   }
@@ -686,40 +687,29 @@ class MyComponent extends Vue {
 
   // clickedOnTaz: called when user... clicks on the taz
   private async clickedOnElement(e: MapLayerMouseEvent) {
-    console.log(e.features)
     if (!e.features) return
-    // cancel old close-popup event because it messes with event ordering
-    // if (this._popup) this._popup.off('close', this.closePopupEvent);
-
-    // highlight the zone that we clicked on, using this weird filter thing in MapBox API
-    // see https://www.mapbox.com/mapbox-gl-js/example/hover-styles/
-    // mymap.setFilter("highlight-layer", ["==", "id", props.id]);
 
     const feature = e.features[0]
 
-    // add a close-event, to remove highlight if user closes the popup
-    // _popup.on('close', closePopupEvent);
-
-    // calc the data
     const data: any[] = []
     let daily = 0
 
     if (feature.properties) {
       const columns = this.headers
       for (const column of columns) {
-        if (!isNumber(column)) continue
-        const trips = feature.properties[column]
+        if (column === this.TOTAL_MSG) continue
+        let trips = feature.properties[column]
+        if (!trips) trips = 0
         daily += trips
-        if (!daily) continue // don't start graph before data fills in
-        data.push({ hour: Number(column), trips })
+        data.push({ hour: column, trips })
       }
     }
 
     if (!daily) daily = 0
     // build HTML of popup window
     let html =
-      `<p style="text-align: center; min-width: max-content;"><b>Trips by Time of Day</b><br/>` +
-      `Total daily trips: ` +
+      `<p style="text-align: center; min-width: max-content;"><b>Details</b><br/>` +
+      `Insgesamt: ` +
       daily +
       `</p>`
 
@@ -731,26 +721,29 @@ class MyComponent extends Vue {
     this._popup.addTo(this.map)
 
     console.log({ data })
-    // @ts-ignore
-    this.currentChart = new Morris.Bar({
-      // ID of the element in which to draw the chart.
-      element: 'chart',
-      data: data,
-      stacked: true,
-      xkey: 'hour', // The name of the data record attribute that contains x-values.
-      ykeys: ['trips'], // A list of names of data record attributes that contain y-values.
-      // ymax: 100,
-      labels: ['Trips'], // 'Dropoffs'],
-      barColors: ['#3377cc'], // , '#cc0033'],
-      xLabels: 'Uhr',
-      xLabelAngle: 90,
-      xLabelFormat: (row: any) => {
-        return row.x + ':00'
-      },
-      hideHover: true,
-      parseTime: true,
-      resize: true,
-    })
+
+    if (daily) {
+      // @ts-ignore
+      this.currentChart = new Morris.Bar({
+        // ID of the element in which to draw the chart.
+        element: 'chart',
+        data: data,
+        stacked: true,
+        xkey: 'hour', // The name of the data record attribute that contains x-values.
+        ykeys: ['trips'], // A list of names of data record attributes that contain y-values.
+        // ymax: 100,
+        labels: ['Trips'], // 'Dropoffs'],
+        barColors: ['#3377cc'], // , '#cc0033'],
+        xLabels: 'Uhr',
+        xLabelAngle: 90,
+        // xLabelFormat: (row: any) => {
+        //   return row.x + ':00'
+        // },
+        hideHover: true,
+        parseTime: false,
+        resize: true,
+      })
+    }
   }
   private currentChart: any = {}
 }
