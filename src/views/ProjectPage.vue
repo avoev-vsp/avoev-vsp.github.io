@@ -13,19 +13,48 @@
     //- show network errors
     .badnews(v-if="myState.errorStatus" v-html="myState.errorStatus")
 
-    //- these are sections defined by viz-summary.yml etc
-
-    .curate-content(v-if="projectYaml.length > 1")
-      .folder(:class="{fade: myState.isLoading}"
-            v-for="folder in projectYaml" :key="folder.title"
-            @click="openOutputFolder(folder.folder)")
-        h3 {{ folder.title }}
-        p {{ folder.description}}
-        p(v-for="ul in folder.notes") - {{ ul }}
-
     //- this is the content of readme.md, if it exists
     .readme-header
       .curate-content.markdown(v-if="myState.readme" v-html="myState.readme")
+
+    .curate-content(v-if="projectYaml.length > 1")
+      .viz-table
+        .folder(:class="{fade: myState.isLoading}"
+              v-for="folder in projectYaml" :key="folder.title"
+              @click="openOutputFolder(folder.folder)")
+          .banner
+            h3 {{ folder.title }}
+            p {{ folder.description}}
+          .notes
+            ul(v-if="folder.notes")
+              li.notes-item(v-for="item in folder.notes") {{ item }}
+
+    .curate-content(v-if="myState.vizes.length")
+      .viz-table
+        .viz-item(v-for="viz,index in myState.vizes"
+                  :key="viz.config"
+                  @click="clickedVisualization(index)")
+          .viz-frame
+            p {{ viz.title }}
+            component(:is="viz.component" :yamlConfig="viz.config"
+                  :fileApi="myState.svnRoot"
+                  :subfolder="myState.subfolder"
+                  :thumbnail="true"
+                  :style="{'pointer-events': viz.component==='image-view' ? 'auto' : 'none'}"
+                  @title="updateTitle(index, $event)")
+
+    .footer(v-if="!myState.isFullScreen")
+      .logos
+        .flogo
+          a(href="https://vsp.tu-berlin.de")
+            img(alt="TU-Berlin logo" src="@/assets/images/vsp-logo.png" width=225)
+        .flogo
+          a(href="https://matsim.org")
+            img(alt="MATSim logo" src="@/assets/images/matsim-logo-blue.png" width=250)
+        .flogo
+          a(href="https://bmvi.de")
+            img(alt="BMVI" src="/logo-bmvi.png" width=300)
+
 
 </template>
 
@@ -429,13 +458,39 @@ h2 {
   flex-direction: column;
   background-color: white;
   margin: 0.25rem 0rem;
-  padding: 0.75rem 1rem;
+  background-color: #eee;
+  color: white;
+  box-shadow: none;
+}
+
+.notes-item {
+  list-style-type: square;
+  margin-left: 1rem;
+  margin-top: 0.25rem;
+  color: #222;
 }
 
 .folder:hover {
-  background-color: #ffd;
-  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.05), 0 3px 10px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 6px 4px rgba(0, 0, 0, 0.2);
   transition: box-shadow 0.1s ease-in-out;
+  background-color: white;
+}
+
+.banner {
+  background-color: $tuRed;
+  padding: 0.75rem 1rem;
+  h3 {
+    margin-top: 1rem;
+  }
+}
+
+.notes {
+  padding: 0.75rem 1rem;
+}
+
+.notes:hover {
+  background-color: white;
+  transition: background-color 0.1s ease-in-out;
 }
 
 .project-bar {
@@ -509,7 +564,30 @@ h3.curate-heading {
   grid-area: 'content';
   padding: 1rem 0rem;
   margin: 0rem 0rem;
-  border-bottom: 1px solid $themeColorPaler;
+}
+
+#app .footer {
+  color: #222;
+  background-color: white;
+  display: flex;
+}
+
+.logos {
+  display: flex;
+  margin: 0 auto;
+}
+
+.flogo {
+  margin: auto 0;
+  height: min-content;
+}
+
+a.footer {
+  color: $matsimBlue;
+}
+
+.footer img {
+  padding: 0 1rem;
 }
 
 @media only screen and (max-width: 640px) {
