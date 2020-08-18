@@ -173,7 +173,6 @@ class MyComponent extends Vue {
   }
 
   private thumbnailUrl = "url('assets/thumbnail.jpg') no-repeat;"
-
   private get urlThumbnail() {
     return this.thumbnailUrl
   }
@@ -206,9 +205,12 @@ class MyComponent extends Vue {
     const t = this.vizDetails.title ? this.vizDetails.title : 'Agent Animation'
     this.$emit('title', t)
 
+    this.buildThumbnail()
+  }
+
+  private async buildThumbnail() {
     // thumbnail
     if (this.thumbnail && this.vizDetails.thumbnail) {
-      console.log('1')
       try {
         const blob = await this.myState.fileApi.getFileBlob(
           this.myState.subfolder + '/' + this.vizDetails.thumbnail

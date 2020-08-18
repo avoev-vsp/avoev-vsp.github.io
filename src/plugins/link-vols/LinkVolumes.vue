@@ -1,5 +1,5 @@
 <template lang="pug">
-#link-container
+#link-container(:style='{"background": urlThumbnail}')
   .map-container(v-if="!thumbnail")
     .mymap(:id="mapId")
 
@@ -74,6 +74,7 @@ interface VolumePlotYaml {
   description?: string
   shpFileIdProperty?: string
   sampleRate?: number
+  thumbnail?: string
 }
 
 interface MapElement {
@@ -132,6 +133,7 @@ class MyComponent extends Vue {
     scaleFactor: 1,
     title: '',
     description: '',
+    thumbnail: '',
   }
 
   @Watch('showAllRoads') toggleShowAllRoads() {
@@ -296,7 +298,41 @@ class MyComponent extends Vue {
     if (!this.vizDetails.shpFileIdProperty) this.vizDetails.shpFileIdProperty = 'Id'
     this.sampleRate = this.vizDetails.sampleRate ? this.vizDetails.sampleRate : 1.0
 
+    this.buildThumbnail()
+
     nprogress.done()
+  }
+
+  private async buildThumbnail() {
+    // thumbnail
+    if (this.thumbnail && this.vizDetails.thumbnail) {
+      try {
+        const blob = await this.myState.fileApi.getFileBlob(
+          this.myState.subfolder + '/' + this.vizDetails.thumbnail
+        )
+        const buffer = await readBlob.arraybuffer(blob)
+        const base64 = this.arrayBufferToBase64(buffer)
+        if (base64)
+          this.thumbnailUrl = `center / cover no-repeat url(data:image/png;base64,${base64})`
+      } catch (e) {
+        console.error(e)
+      }
+    }
+  }
+
+  private arrayBufferToBase64(buffer: any) {
+    var binary = ''
+    var bytes = new Uint8Array(buffer)
+    var len = bytes.byteLength
+    for (var i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i])
+    }
+    return window.btoa(binary)
+  }
+
+  private thumbnailUrl = "url('assets/thumbnail.jpg') no-repeat;"
+  private get urlThumbnail() {
+    return this.thumbnailUrl
   }
 
   private sampleRate = 1.0
@@ -785,7 +821,7 @@ export default MyComponent
   grid-template-rows: 1fr;
   width: 100%;
   min-height: 200px;
-  background: url('./thumb-linkvols.jpg') no-repeat center;
+  background: url('./assets/thumbnail.jpg') no-repeat center;
 }
 
 .map-container {
