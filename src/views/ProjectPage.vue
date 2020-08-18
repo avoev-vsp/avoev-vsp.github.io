@@ -14,45 +14,18 @@
     .badnews(v-if="myState.errorStatus" v-html="myState.errorStatus")
 
     //- these are sections defined by viz-summary.yml etc
-    .curated-sections
 
-      //- this is the content of readme.md, if it exists
-      .readme-header
-        .curate-content.markdown(v-if="myState.readme" v-html="myState.readme")
+    .curate-content(v-if="projectYaml.length > 1")
+      .folder(:class="{fade: myState.isLoading}"
+            v-for="folder in projectYaml" :key="folder.title"
+            @click="openOutputFolder(folder.folder)")
+        h3 {{ folder.title }}
+        p {{ folder.description}}
+        p(v-for="ul in folder.notes") - {{ ul }}
 
-      //- file system folders
-      h3.curate-heading(v-if="myState.folders.length > 1")  Runs
-
-      .curate-content(v-if="myState.folders.length > 1")
-        .folder(:class="{fade: myState.isLoading}"
-              v-for="folder in myState.folders" :key="folder.name"
-              @click="openOutputFolder(folder)")
-          p {{ folder }}
-
-      //- thumbnails of each viz and image in this folder
-      h3.curate-heading(v-if="myState.vizes.length") Analysen
-
-      .curate-content(v-if="myState.vizes.length")
-        .viz-table
-          .viz-item(v-for="viz,index in myState.vizes"
-                    :key="viz.config"
-                    @click="clickedVisualization(index)")
-            .viz-frame
-              p {{ viz.title }}
-              component(:is="viz.component" :yamlConfig="viz.config"
-                    :fileApi="myState.svnRoot"
-                    :subfolder="myState.subfolder"
-                    :thumbnail="true"
-                    :style="{'pointer-events': viz.component==='image-view' ? 'auto' : 'none'}"
-                    @title="updateTitle(index, $event)")
-
-      //- individual links to files in this folder
-      h3.curate-heading(v-if="myState.files.length") Dateien
-
-      .curate-content(v-if="myState.files.length")
-        .file(:class="{fade: myState.isLoading}"
-              v-for="file in myState.files" :key="file")
-          a(:href="`${myState.svnProject.svn}/${myState.subfolder}/${file}`") {{ file }}
+    //- this is the content of readme.md, if it exists
+    .readme-header
+      .curate-content.markdown(v-if="myState.readme" v-html="myState.readme")
 
 </template>
 
@@ -110,12 +83,7 @@ export default class VueComponent extends Vue {
   }
 
   private getFileSystem(name: string) {
-    let svnProject: any[] = globalStore.state.svnProjects.filter((a: any) => a.url === name)
-
-    if (svnProject.length === 0) {
-      // skip 'project:' prefix
-      svnProject = globalStore.state.svnProjects.filter((a: any) => a.url === name.substring(8))
-    }
+    const svnProject: any[] = globalStore.state.svnProjects.filter((a: any) => a.url === name)
 
     if (svnProject.length === 0) {
       console.log('no such project')
@@ -188,6 +156,7 @@ export default class VueComponent extends Vue {
 
     // this happens async
     this.fetchFolderContents()
+    this.loadYaml()
   }
 
   @Watch('globalState.authAttempts') authenticationChanged() {
@@ -301,6 +270,26 @@ export default class VueComponent extends Vue {
     }
 
     return []
+  }
+  private projectYaml: any[] = []
+
+  private async loadYaml() {
+    if (!this.myState.svnRoot) return []
+    this.myState.isLoading = true
+    this.myState.errorStatus = ''
+    this.myState.folders = []
+    this.myState.files = []
+
+    try {
+      const y = await this.myState.svnRoot.getFileText('runs.yml')
+
+      this.projectYaml = yaml.parse(y)
+      console.log({ yaml: this.projectYaml })
+    } catch (e) {
+      // Bad things happened! Tell user
+      console.log('BAD PAGE')
+      console.error(e)
+    }
   }
 
   private async fetchFolderContents() {
