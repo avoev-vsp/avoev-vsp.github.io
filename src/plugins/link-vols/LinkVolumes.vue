@@ -346,6 +346,14 @@ class MyComponent extends Vue {
     if (this.showTimeRange == false) {
       this.map.setPaintProperty('my-layer', 'line-width', ['*', widthFactor, ['get', value]])
       this.map.setPaintProperty('my-layer', 'line-offset', ['*', 0.5 * widthFactor, ['get', value]])
+      this.map.setPaintProperty('my-layer', 'line-color', [
+        'case',
+        ['boolean', ['feature-state', 'hover'], false],
+        '#fb0',
+        ['==', ['get', value], null],
+        '#8ca',
+        '#559',
+      ])
     } else {
       const sumElements: any = ['+']
 
