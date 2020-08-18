@@ -1,5 +1,6 @@
 <template lang="pug">
-#v3-app(:class="{'hide-thumbnail': !thumbnail}")
+#v3-app(:class="{'hide-thumbnail': !thumbnail}"
+        :style='{"background": urlThumbnail}')
   animation-view.anim(v-if="!thumbnail && vizDetails.network"
     @loaded="toggleLoaded" :vizState="myState" :speed="speed"
     :fileApi="fileApi" :subfolder="subfolder" :yamlConfig="yamlConfig" :vizDetails="vizDetails")
@@ -49,6 +50,7 @@ import { Component, Vue, Prop, Watch } from 'vue-property-decorator'
 import Papaparse from 'papaparse'
 import VueSlider from 'vue-slider-component'
 import { ToggleButton } from 'vue-js-toggle-button'
+import readBlob from 'read-blob'
 import yaml from 'yaml'
 
 import globalStore from '@/store'
@@ -94,6 +96,7 @@ class MyComponent extends Vue {
     projection: '',
     title: '',
     description: '',
+    thumbnail: '',
   }
 
   public myState = {
@@ -169,6 +172,12 @@ class MyComponent extends Vue {
     return crumbs
   }
 
+  private thumbnailUrl = "url('assets/thumbnail.jpg') no-repeat;"
+
+  private get urlThumbnail() {
+    return this.thumbnailUrl
+  }
+
   private getFileSystem(name: string) {
     const svnProject: any[] = globalStore.state.svnProjects.filter((a: any) => a.url === name)
     if (svnProject.length === 0) {
@@ -186,14 +195,32 @@ class MyComponent extends Vue {
       )
       this.vizDetails = yaml.parse(text)
     } catch (e) {
+      console.log('failed')
       // maybe it failed because password?
       if (this.myState.fileSystem && this.myState.fileSystem.need_password && e.status === 401) {
         globalStore.commit('requestLogin', this.myState.fileSystem.url)
       }
     }
 
+    // title
     const t = this.vizDetails.title ? this.vizDetails.title : 'Agent Animation'
     this.$emit('title', t)
+
+    // thumbnail
+    if (this.thumbnail && this.vizDetails.thumbnail) {
+      console.log('1')
+      try {
+        const blob = await this.myState.fileApi.getFileBlob(
+          this.myState.subfolder + '/' + this.vizDetails.thumbnail
+        )
+        const buffer = await readBlob.arraybuffer(blob)
+        const base64 = this.arrayBufferToBase64(buffer)
+        if (base64)
+          this.thumbnailUrl = `center / cover no-repeat url(data:image/png;base64,${base64})`
+      } catch (e) {
+        console.error(e)
+      }
+    }
   }
 
   @Watch('globalState.authAttempts') private async authenticationChanged() {
@@ -205,6 +232,16 @@ class MyComponent extends Vue {
   @Watch('state.colorScheme') private swapTheme() {
     this.isDarkMode = this.myState.colorScheme === ColorScheme.DarkMode
     this.updateLegendColors()
+  }
+
+  private arrayBufferToBase64(buffer: any) {
+    var binary = ''
+    var bytes = new Uint8Array(buffer)
+    var len = bytes.byteLength
+    for (var i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i])
+    }
+    return window.btoa(binary)
   }
 
   private updateLegendColors() {
@@ -255,11 +292,7 @@ class MyComponent extends Vue {
 
     this.generateBreadcrumbs()
 
-    this.showHelp = false // !this.state.sawAgentAnimationHelp
-    // this.$store.commit('setShowingHelp', this.showHelp)
-
-    // start the sim right away if the dialog isn't showing
-    // this.myState.isRunning = !this.showHelp
+    this.showHelp = false
 
     // make nice colors
     this.updateLegendColors()
