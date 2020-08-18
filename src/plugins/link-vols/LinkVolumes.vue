@@ -25,6 +25,9 @@
       scale-slider.time-slider(v-if="headers.length > 0"
         :stops='SCALE_STOPS'
         @change='bounceScale')
+      label.checkbox
+         input(type="checkbox" v-model="showAllRoads")
+         | &nbsp;Gesamtes Straßennetz anzeigen
 
       //- h4.heading Täglich insgesamt
       //- #summary-chart
@@ -104,6 +107,8 @@ class MyComponent extends Vue {
 
   private globalState = globalStore.state
 
+  private showAllRoads = false
+
   private mapExtentXYXY: any = [180, 90, -180, -90]
 
   private mapId = `m${Math.floor(Math.random() * Math.floor(1e10))}`
@@ -129,12 +134,12 @@ class MyComponent extends Vue {
     description: '',
   }
 
-  private destroyed() {
-    globalStore.commit('setFullScreen', false)
+  @Watch('showAllRoads') toggleShowAllRoads() {
+    this.changedTimeSlider(this.currentTimeBin)
   }
 
-  private async zmounted() {
-    globalStore.commit('setFullScreen', !this.thumbnail)
+  private destroyed() {
+    globalStore.commit('setFullScreen', false)
   }
 
   private async mounted() {
@@ -354,6 +359,9 @@ class MyComponent extends Vue {
         '#8ca',
         '#559',
       ])
+
+      const filter = this.showAllRoads ? null : ['>', ['get', this.currentTimeBin], 1]
+      this.map.setFilter('my-layer', filter)
     } else {
       const sumElements: any = ['+']
 
