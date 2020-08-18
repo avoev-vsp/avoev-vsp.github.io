@@ -66,10 +66,11 @@ interface VolumePlotYaml {
   dbfFile: string
   csvFile: string
   projection: string
-  scaleFactor: number
+  scaleFactor?: number
   title?: string
   description?: string
   idColumn?: string
+  sampleRate?: number
 }
 
 interface MapElement {
@@ -288,10 +289,12 @@ class MyComponent extends Vue {
     this.$emit('title', this.vizDetails.title)
 
     this.vizDetails.idColumn = this.vizDetails.idColumn ? this.vizDetails.idColumn : 'id'
+    this.sampleRate = this.vizDetails.sampleRate ? this.vizDetails.sampleRate : 1.0
 
     nprogress.done()
   }
 
+  private sampleRate = 1.0
   private map!: mapboxgl.Map
 
   private async loadFiles() {
@@ -589,12 +592,14 @@ class MyComponent extends Vue {
           if (key === this.idColumn) continue
 
           if (!isNaN(values[key])) {
-            link.properties[key] = values[key]
-            daily += values[key]
+            const value = values[key] / this.sampleRate
+
+            link.properties[key] = value
+            daily += value
 
             // record global totals too
             if (!this.dailyTotals[key]) this.dailyTotals[key] = 0
-            this.dailyTotals[key] += values[key]
+            this.dailyTotals[key] += value
           }
         }
         link.properties[this.TOTAL_MSG] = daily
