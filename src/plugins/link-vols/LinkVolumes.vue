@@ -72,7 +72,7 @@ interface VolumePlotYaml {
   scaleFactor?: number
   title?: string
   description?: string
-  idColumn?: string
+  shpFileIdProperty?: string
   sampleRate?: number
 }
 
@@ -293,7 +293,7 @@ class MyComponent extends Vue {
 
     this.$emit('title', this.vizDetails.title)
 
-    this.vizDetails.idColumn = this.vizDetails.idColumn ? this.vizDetails.idColumn : 'id'
+    if (!this.vizDetails.shpFileIdProperty) this.vizDetails.shpFileIdProperty = 'Id'
     this.sampleRate = this.vizDetails.sampleRate ? this.vizDetails.sampleRate : 1.0
 
     nprogress.done()
@@ -399,22 +399,21 @@ class MyComponent extends Vue {
     this.myState.loadingText = 'Converting coordinates...'
     let errCount = 0
 
-    // console.log({ geojson })
+    // The shapefile must have an ID for each feature. Ihab doesn't
+    // seem to have a standard ID; sometimes it is "Id" and sometimes it
+    // is "ID" and ... ugh. Anyway, default to "Id" unless it is specified in
+    // YAML.
 
-    this.vizDetails.idColumn = 'Id'
+    const idPropertyName = this.vizDetails.shpFileIdProperty
+      ? this.vizDetails.shpFileIdProperty
+      : 'Id'
 
     let id = 0
     for (const feature of geojson.features) {
-      // 'id' column used for lookup, unless idColumn is set in YAML
-
-      //if (!this.vizDetails.idColumn && feature.properties)
-      //   this.vizDetails.idColumn = Object.keys(feature.properties)[0]
-
       // Save ID somewhere more helpful
       if (feature.properties) {
-        // && this.vizDetails.idColumn) {
-        feature.id = id++ // feature.properties[this.vizDetails.idColumn]
-        this.idLookup[feature.properties[this.vizDetails.idColumn]] = feature.id
+        feature.id = id++
+        this.idLookup[feature.properties[idPropertyName]] = feature.id
       }
 
       try {
@@ -433,7 +432,6 @@ class MyComponent extends Vue {
         }
       }
     }
-
     return geojson
   }
 
@@ -580,7 +578,6 @@ class MyComponent extends Vue {
       dynamicTyping: true,
       delimiter,
     })
-    // console.log('finished reading CSV', content)
 
     const key = content.meta.fields[0]
     this.idColumn = key
