@@ -1,5 +1,5 @@
 <template lang="pug">
-#container(v-if="myState.yamlConfig")
+#sankey-container(v-if="myState.yamlConfig")
   .main-area
     .labels(v-show="myState.thumbnail")
       h5.center {{ vizDetails.description }}
@@ -279,9 +279,10 @@ export default MyComponent
 </script>
 
 <style scoped>
-#container {
+#sankey-container {
   width: 100%;
   display: grid;
+  background-color: white;
   grid-template-columns: auto 1fr;
   grid-template-rows: auto auto;
 }
