@@ -109,7 +109,10 @@ class MyComponent extends Vue {
   }
 
   private getFileSystem(name: string) {
-    const svnProject: any[] = globalStore.state.svnProjects.filter((a: any) => a.url === name)
+    let svnProject: any[] = globalStore.state.svnProjects.filter((a: any) => a.url === name)
+    if (svnProject.length === 0) {
+      svnProject = globalStore.state.svnProjects.filter((a: any) => a.url === name.substring(8))
+    }
     if (svnProject.length === 0) {
       console.log('no such project')
       throw Error
