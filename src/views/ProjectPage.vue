@@ -8,7 +8,7 @@
 
   .map-header
     .map
-      img(:src="myState.svnProject.thumbnail")
+      img(width=500 v-if="myState.svnProject" :src="myState.svnProject.thumbnail")
     .logo
       img(src="/logo-avoev.png")
 
@@ -519,6 +519,10 @@ h2 {
     width: 100%;
     object-fit: contain;
   }
+}
+
+.map {
+  text-align: center;
 }
 
 .map-header {
