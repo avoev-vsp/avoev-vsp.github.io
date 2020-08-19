@@ -170,6 +170,7 @@ h3 {
   grid-row: 1 / 2;
   width: 100%;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.1);
+  z-index: 10000;
 }
 
 .main-content {
@@ -205,7 +206,7 @@ h3 {
   grid-row: 3 / 4;
   text-align: center;
   font-size: 0.8rem;
-  margin: 2rem 0 0 0;
+  margin: 0 0;
   padding: 1rem 1rem;
   color: #ccc;
 

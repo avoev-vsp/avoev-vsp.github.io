@@ -5,6 +5,7 @@
     h3 AVÖV Projekt Portal
 
   .page-area
+    colophon.colophon
     .content
       .main
         img(src="/logo-avoev.png" height=120)
@@ -16,17 +17,17 @@
         h2 Mehr Info
         .readme(v-html="readmeBottom")
 
-        .footer(v-if="!state.isFullScreen")
-          .logos
-            .logo
-              a(href="https://vsp.tu-berlin.de")
-                img(alt="TU-Berlin logo" src="@/assets/images/vsp-logo.png" width=225)
-            .logo
-              a(href="https://matsim.org")
-                img(alt="MATSim logo" src="@/assets/images/matsim-logo-blue.png" width=250)
-            .logo
-              a(href="https://bmvi.de")
-                img(alt="BMVI" src="/logo-bmvi.png" width=300)
+        //- .footer(v-if="!state.isFullScreen")
+        //-   .logos
+        //-     .logo
+        //-       a(href="https://vsp.tu-berlin.de")
+        //-         img(alt="TU-Berlin logo" src="@/assets/images/vsp-logo.png" width=225)
+        //-     .logo
+        //-       a(href="https://matsim.org")
+        //-         img(alt="MATSim logo" src="@/assets/images/matsim-logo-blue.png" width=250)
+        //-     .logo
+        //-       a(href="https://bmvi.de")
+        //-         img(alt="BMVI" src="/logo-bmvi.png" width=300)
 
 
 </template>
@@ -88,6 +89,7 @@ export default MyComponent
   background: url(../assets/images/banner.jpg);
   background-repeat: no-repeat;
   background-size: cover;
+  // border-bottom: 1px solid $tuRed;
 }
 
 .banner h2 {

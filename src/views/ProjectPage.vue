@@ -1,23 +1,30 @@
 <template lang="pug">
 #project-component
+ .main-area
+  //- .project-bar(v-if="myState.svnProject")
+  //-   .details
+  //-     h2 {{ globalState.breadcrumbs[globalState.breadcrumbs.length -1].label }}
+  //-     p {{ myState.svnProject.description }}
 
-  .project-bar(v-if="myState.svnProject")
-    .details
-      h2 {{ globalState.breadcrumbs[globalState.breadcrumbs.length -1].label }}
-      p {{ myState.svnProject.description }}
+  .map-header
+    .map
+      img(:src="myState.svnProject.thumbnail")
     .logo
-        img(height=160 src="/logo-avoev.png")
+      img(src="/logo-avoev.png")
 
   .details(v-if="myState.svnProject")
 
     //- show network errors
     .badnews(v-if="myState.errorStatus" v-html="myState.errorStatus")
 
-    //- this is the content of readme.md, if it exists
     .readme-header
       .curate-content.markdown(v-if="myState.readme" v-html="myState.readme")
 
     .curate-content(v-if="projectYaml.length > 1")
+      hr
+      h3 Ergebnisse
+      p Die folgenden Links führen zu den Ergebnissen verschiedener Simulationsexperimente für die Stadt Gladbeck und Umgebung.
+
       .viz-table
         .folder(:class="{fade: myState.isLoading}"
               v-for="folder in projectYaml" :key="folder.title"
@@ -30,6 +37,8 @@
               li.notes-item(v-for="item in folder.notes") {{ item }}
 
     .curate-content(v-if="myState.vizes.length")
+      hr
+      h3 Fazit
       .viz-table
         .viz-item(v-for="viz,index in myState.vizes"
                   :key="viz.config"
@@ -42,19 +51,7 @@
                   :thumbnail="true"
                   :style="{'pointer-events': viz.component==='image-view' ? 'auto' : 'none'}"
                   @title="updateTitle(index, $event)")
-
-    .footer(v-if="!myState.isFullScreen")
-      .logos
-        .flogo
-          a(href="https://vsp.tu-berlin.de")
-            img(alt="TU-Berlin logo" src="@/assets/images/vsp-logo.png" width=225)
-        .flogo
-          a(href="https://matsim.org")
-            img(alt="MATSim logo" src="@/assets/images/matsim-logo-blue.png" width=250)
-        .flogo
-          a(href="https://bmvi.de")
-            img(alt="BMVI" src="/logo-bmvi.png" width=300)
-
+ colophon.colophon
 
 </template>
 
@@ -64,8 +61,10 @@ import markdown from 'markdown-it'
 import mediumZoom from 'medium-zoom'
 import micromatch from 'micromatch'
 import yaml from 'yaml'
+
 import globalStore from '@/store.ts'
 import plugins from '@/plugins/pluginRegistry'
+import Colophon from '@/components/Colophon.vue'
 import HTTPFileSystem from '@/util/HTTPFileSystem'
 import { BreadCrumb, VisualizationPlugin, SVNProject } from '../Globals'
 
@@ -88,8 +87,11 @@ interface IMyState {
   vizes: VizEntry[]
 }
 
+const allComponents = plugins as any
+allComponents.Colophon = Colophon
+
 @Component({
-  components: plugins,
+  components: allComponents,
   props: {},
 })
 export default class VueComponent extends Vue {
@@ -383,7 +385,7 @@ export default class VueComponent extends Vue {
 
 #project-component {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
 }
 
 h3,
@@ -410,7 +412,7 @@ h2 {
   grid-gap: 1.5rem;
   grid-template-columns: repeat(3, minmax(100px, 1fr));
   list-style: none;
-  margin-bottom: 0px;
+  margin: 1rem 0;
   padding-left: 0px;
 }
 
@@ -501,7 +503,6 @@ h2 {
   background-color: white;
   max-height: 10rem;
   // border-bottom: 1px solid $themeColorPale;
-  z-index: 10000;
   box-shadow: 0px 0px 8px 8px rgba(0, 0, 0, 0.06);
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.1);
 }
@@ -511,8 +512,8 @@ h2 {
 }
 
 .logo {
-  margin-left: auto;
-  margin-right: 0;
+  margin: 1rem auto;
+  max-width: 40rem;
   img {
     height: 100%;
     width: 100%;
@@ -520,7 +521,14 @@ h2 {
   }
 }
 
+.map-header {
+  .logo {
+    margin: 1rem auto;
+  }
+}
+
 .details {
+  max-width: 75rem;
   flex: 1;
   padding: 0rem 3rem 3rem 3rem;
 }
@@ -547,6 +555,7 @@ h2 {
 }
 
 .readme-header {
+  text-align: center;
   font-size: 1.1rem;
   grid-column: 1 / 3;
   padding-bottom: 1rem;
@@ -588,6 +597,14 @@ a.footer {
 
 .footer img {
   padding: 0 1rem;
+}
+
+.colophon {
+  padding: 2rem 2rem 1rem 3rem;
+  text-align: right;
+  font-size: 0.85rem;
+  background-color: white;
+  margin-left: auto;
 }
 
 @media only screen and (max-width: 640px) {
