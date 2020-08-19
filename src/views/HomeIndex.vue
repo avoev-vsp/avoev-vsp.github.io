@@ -14,7 +14,7 @@
         h2 Wählen Sie das Untersuchungsgebiet aus:
         svn-projects.gap
 
-        h2 Mehr Info
+        h2 Weitere Informationen
         .readme(v-html="readmeBottom")
 
         //- .footer(v-if="!state.isFullScreen")
