@@ -38,7 +38,7 @@
 
     .curate-content(v-if="myState.vizes.length")
       hr
-      h3 Fazit
+      h3 Übersicht
       .viz-table
         .viz-item(v-for="viz,index in myState.vizes"
                   :key="viz.config"
