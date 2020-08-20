@@ -176,7 +176,7 @@ class MyComponent extends Vue {
   }
 
   private setMapExtent() {
-    localStorage.setItem(this.$route.fullPath + '-bounds', JSON.stringify(this.mapExtentXYXY))
+    localStorage.setItem(this.myState.subfolder + '-bounds', JSON.stringify(this.mapExtentXYXY))
 
     const options = this.thumbnail
       ? { animate: false }
@@ -267,7 +267,8 @@ class MyComponent extends Vue {
 
   private findCenter() {
     try {
-      const extent = localStorage.getItem(this.$route.fullPath + '-bounds')
+      const extent = localStorage.getItem(this.myState.subfolder + '-bounds')
+      console.log({ extent })
       if (extent) {
         const lnglat = JSON.parse(extent)
 

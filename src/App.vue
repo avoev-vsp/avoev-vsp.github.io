@@ -8,7 +8,7 @@
           li(v-for="crumb,i in state.breadcrumbs" :key="crumb.label + crumb.url"
             @click="clickedLink(crumb.url)"
             @click.middle="openNewTab(crumb.url)"
-            @click.ctrk="openNewTab(crumb.url)"
+            @click.ctrl="openNewTab(crumb.url)"
             @click.meta="openNewTab(crumb.url)"
             )
               p {{ crumb.label }}
