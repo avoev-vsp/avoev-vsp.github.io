@@ -6,7 +6,11 @@
       nav.breadcrumb(aria-label="breadcrumbs")
         ul
           li(v-for="crumb,i in state.breadcrumbs" :key="crumb.label + crumb.url"
-            @click="clickedLink(crumb.url)")
+            @click="clickedLink(crumb.url)"
+            @click.middle="openNewTab(crumb.url)"
+            @click.ctrk="openNewTab(crumb.url)"
+            @click.meta="openNewTab(crumb.url)"
+            )
               p {{ crumb.label }}
               // p {{ i === 0 ? 'Home' : crumb.label }}
 
@@ -46,6 +50,10 @@ class App extends Vue {
 
   private clickedLink(path: string) {
     this.$router.push({ path })
+  }
+
+  private openNewTab(path: string) {
+    window.open(path, '_blank')
   }
 
   @Watch('state.isFullScreen') async toggleFullScreen(isFullPage: boolean) {

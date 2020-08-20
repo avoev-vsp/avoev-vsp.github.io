@@ -28,7 +28,11 @@
       .viz-table
         .folder(:class="{fade: myState.isLoading}"
               v-for="folder in projectYaml" :key="folder.title"
-              @click="openOutputFolder(folder.folder)")
+              @click="openOutputFolder(folder.folder, false)"
+              @click.middle="openOutputFolder(folder.folder, true)"
+              @click.ctrl="openOutputFolder(folder.folder, true)"
+              @click.meta="openOutputFolder(folder.folder, true)"
+              )
           .banner
             h3 {{ folder.title }}
             p {{ folder.description}}
@@ -42,7 +46,11 @@
       .viz-table
         .viz-item(v-for="viz,index in myState.vizes"
                   :key="viz.config"
-                  @click="clickedVisualization(index)")
+                  @click="clickedVisualization(index, false)"
+                  @click.middle="clickedVisualization(index,true)"
+                  @click.ctrl="clickedVisualization(index,true)"
+                  @click.meta="clickedVisualization(index,true)"
+                  )
           .viz-frame
             p {{ viz.title }}
             component(:is="viz.component" :yamlConfig="viz.config"
@@ -156,7 +164,7 @@ export default class VueComponent extends Vue {
     this.updateRoute()
   }
 
-  private clickedVisualization(vizNumber: number) {
+  private clickedVisualization(vizNumber: number, newTab: boolean) {
     const viz = this.myState.vizes[vizNumber]
 
     // special case: images don't click thru
@@ -165,7 +173,9 @@ export default class VueComponent extends Vue {
     if (!this.myState.svnProject) return
 
     const path = `/v/${viz.component}/${this.myState.svnProject.url}/${this.myState.subfolder}/${viz.config}`
-    this.$router.push({ path })
+
+    if (newTab) window.open(path, '_blank')
+    else this.$router.push({ path })
   }
 
   private updateTitle(viz: number, title: string) {
@@ -370,12 +380,14 @@ export default class VueComponent extends Vue {
     }
   }
 
-  private openOutputFolder(folder: string) {
+  private openOutputFolder(folder: string, newTab: boolean) {
     if (this.myState.isLoading) return
     if (!this.myState.svnProject) return
 
     const path = '/' + this.myState.svnProject.url + '/' + this.myState.subfolder + '/' + folder
-    this.$router.push({ path })
+
+    if (newTab) window.open(path, '_blank')
+    else this.$router.push({ path })
   }
 }
 </script>

@@ -1,6 +1,11 @@
 <template lang="pug">
 #vue-component
-  .project(v-for="source in sources" :key="source.url" @click='openProjectPage(source)')
+  .project(v-for="source in sources" :key="source.url"
+      @click='openProjectPage(source)'
+      @click.middle='openProjectTab(source)'
+      @click.meta='openProjectTab(source)'
+      @click.ctrl='openProjectTab(source)'
+      )
       img(:src="source.thumbnail")
       .desc
         h3 {{ source.name }}
@@ -23,6 +28,10 @@ export default class VueComponent extends Vue {
 
   private openProjectPage(source: any) {
     this.$router.push({ name: source.url })
+  }
+
+  private openProjectTab(source: any) {
+    window.open(source, '_blank')
   }
 }
 </script>
