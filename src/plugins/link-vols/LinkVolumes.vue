@@ -140,6 +140,14 @@ class MyComponent extends Vue {
     this.changedTimeSlider(this.currentTimeBin)
   }
 
+  @Watch('showTimeRange') toggleShowTimeRange() {
+    if (!this.showTimeRange && this.headers.length) {
+      this.currentTimeBin = this.headers[0]
+      // this.sumElements = []
+    }
+    this.changedTimeSlider(this.currentTimeBin)
+  }
+
   private destroyed() {
     globalStore.commit('setFullScreen', false)
   }
@@ -379,12 +387,14 @@ class MyComponent extends Vue {
   }
 
   private changedTimeSlider(value: any) {
-    // if (value === this.currentTimeBin) return
+    if (value.length && value.length === 1) value = value[0]
 
     this.currentTimeBin = value
     const widthFactor = this.WIDTH_SCALE * this.currentScale
 
-    if (this.showTimeRange == false) {
+    if (this.showTimeRange === false) {
+      this.sumElements = []
+
       this.map.setPaintProperty('my-layer', 'line-width', ['*', widthFactor, ['get', value]])
       this.map.setPaintProperty('my-layer', 'line-offset', ['*', 0.5 * widthFactor, ['get', value]])
       this.map.setPaintProperty('my-layer', 'line-color', [
@@ -395,9 +405,6 @@ class MyComponent extends Vue {
         '#8ca',
         '#559',
       ])
-
-      const filter = this.showAllRoads ? null : ['>', ['get', this.currentTimeBin], 1]
-      this.map.setFilter('my-layer', filter)
     } else {
       const sumElements: any = ['+']
 
@@ -416,8 +423,18 @@ class MyComponent extends Vue {
 
       this.map.setPaintProperty('my-layer', 'line-width', ['*', widthFactor, sumElements])
       this.map.setPaintProperty('my-layer', 'line-offset', ['*', 0.5 * widthFactor, sumElements])
+      this.sumElements = sumElements
     }
+    // set filter for background network
+    let filter: any = null
+    if (!this.showAllRoads) {
+      const expression = this.sumElements.length ? this.sumElements : ['get', this.currentTimeBin]
+      filter = ['>=', expression, 1]
+    }
+    this.map.setFilter('my-layer', filter)
   }
+
+  private sumElements: any[] = []
 
   private processHeaders(csvData: string) {
     const lines = csvData.split('\n')
