@@ -268,7 +268,7 @@ class MyComponent extends Vue {
   private findCenter() {
     try {
       const extent = localStorage.getItem(this.myState.subfolder + '-bounds')
-      console.log({ extent })
+
       if (extent) {
         const lnglat = JSON.parse(extent)
 
@@ -638,7 +638,9 @@ class MyComponent extends Vue {
 
     for (const row of content.data) {
       // mapbox requires numerical IDs
-      const originalId = row[key]
+
+      //@ts-ignore
+      const originalId = row[key] as any
       const numericalId = this.idLookup[originalId]
       this.dataset[numericalId] = row
     }

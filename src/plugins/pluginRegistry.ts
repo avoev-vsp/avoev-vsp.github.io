@@ -2,6 +2,7 @@
 import AgentAnimation from '@/plugins/agent-animation/AgentAnimation.vue'
 import LinkVolumes from '@/plugins/link-vols/LinkVolumes.vue'
 import SankeyDiagram from '@/plugins/sankey/SankeyDiagram.vue'
+import VegaLite from '@/plugins/vega-lite/VegaLite.vue'
 import AggregateOd from '@/plugins/aggregate-od/AggregateOd.vue'
 import TransitSupply from '@/plugins/transit-supply/TransitSupply.vue'
 import VideoPlayer from '@/plugins/video-player/VideoPlayer.vue'
@@ -12,6 +13,7 @@ const plugins = {
   AgentAnimation,
   LinkVolumes,
   SankeyDiagram,
+  VegaLite,
   AggregateOd,
   TransitSupply,
   VideoPlayer,
