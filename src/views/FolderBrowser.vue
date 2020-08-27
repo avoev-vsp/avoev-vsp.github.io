@@ -429,6 +429,7 @@ h2 {
 }
 
 .viz-frame {
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 
