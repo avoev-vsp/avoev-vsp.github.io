@@ -8,7 +8,15 @@
       h3.center {{ title }}
       h5.center {{ description }}
 
-    .vega-chart(:id="cleanConfigId" :style="{padding: thumbnail ? '0 0' : '1rem 1rem'}")
+
+    .chart-area.center-chart(v-if="hasFacets")
+      .vega-chart(:id="cleanConfigId"
+                  :style="{padding: thumbnail ? '0 0' : '1rem 1rem'}")
+
+    .vega-chart(v-if="!hasFacets"
+                :id="cleanConfigId"
+                :style="{padding: thumbnail ? '0 0' : '1rem 1rem'}"
+    )
 </template>
 
 <script lang="ts">
@@ -80,6 +88,20 @@ class VegaComponent extends Vue {
   @Watch('subfolder') changedSubfolder() {
     this.myState.subfolder = this.subfolder
     this.getVizDetails()
+  }
+
+  private get hasFacets() {
+    if (!this.vizDetails) return false
+    if (!this.vizDetails.encoding) return false
+
+    if (
+      this.vizDetails.encoding.facet ||
+      this.vizDetails.encoding.row ||
+      this.vizDetails.encoding.column
+    )
+      return true
+
+    return false
   }
 
   private generateBreadcrumbs() {
@@ -162,7 +184,9 @@ class VegaComponent extends Vue {
       this.description = json.description ? json.description : ''
       this.title = json.title
         ? json.title
-        : this.myState.yamlConfig.substring(0, this.myState.yamlConfig.length - 10)
+        : this.myState.yamlConfig
+            .substring(0, this.myState.yamlConfig.length - 10)
+            .replace(/_/g, ' ')
 
       this.$emit('title', this.title)
     } catch (e) {
@@ -176,12 +200,18 @@ class VegaComponent extends Vue {
       return
     }
 
-    // if there is a URL in the schema, try to download it locally first
+    // if there is a URL in the schema, try to load/download it locally first
     if (json.data.url) {
       try {
-        const localUrl = this.myState.subfolder + json.data.url
-        const data = await this.myState.fileApi.getFileJson(localUrl)
-        if (data) json.data = { values: data }
+        let data = ''
+        const localUrl = this.myState.subfolder + '/' + json.data.url
+        if (json.data.url.endsWith('.json')) {
+          data = await this.myState.fileApi.getFileJson(localUrl)
+          if (data) json.data = { values: data }
+        } else if (json.data.url.endsWith('.csv')) {
+          data = await this.myState.fileApi.getFileText(localUrl)
+          if (data) json.data = { values: data, format: { type: 'csv' } }
+        }
       } catch (e) {
         // didn't work -- let Vega try on its own.
         console.warn(e)
@@ -198,6 +228,7 @@ class VegaComponent extends Vue {
     const embedOptions = {
       actions: this.thumbnail ? false : exportActions,
       hover: true,
+      scaleFactor: 2.0, // make exported PNGs bigger
       padding: { top: 2, left: 8, right: 8, bottom: 8 },
     }
 
@@ -272,6 +303,14 @@ p {
   width: 100%;
   display: flex;
   flex-direction: column;
+}
+
+.labels {
+  margin-bottom: 1rem;
+}
+
+.center-chart {
+  margin: 0 auto;
 }
 
 .vega-chart {
