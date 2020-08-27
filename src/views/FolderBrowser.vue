@@ -47,7 +47,7 @@
                     )
             .viz-frame
               p {{ viz.title }}
-              component(:is="viz.component" :yamlConfig="viz.config"
+              component.maxheight(:is="viz.component" :yamlConfig="viz.config"
                     :fileApi="myState.svnRoot"
                     :subfolder="myState.subfolder"
                     :thumbnail="true"
@@ -445,6 +445,10 @@ h2 {
     white-space: nowrap;
     overflow: hidden;
   }
+}
+
+.maxheight {
+  max-height: 225px;
 }
 
 .folder {

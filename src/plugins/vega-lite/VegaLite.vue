@@ -233,7 +233,7 @@ class VegaComponent extends Vue {
     }
 
     // remove legends on thumbnails so chart fits better
-    if (this.thumbnail) {
+    if (this.thumbnail && this.vizDetails.encoding) {
       for (const layer of Object.keys(this.vizDetails.encoding)) {
         this.vizDetails.encoding[layer].legend = null
       }
