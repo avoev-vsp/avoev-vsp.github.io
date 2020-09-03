@@ -68,6 +68,7 @@ interface VolumePlotYaml {
   shpFile: string
   dbfFile: string
   csvFile: string
+  csvFile2?: string
   projection: string
   scaleFactor?: number
   title?: string
@@ -127,6 +128,7 @@ class MyComponent extends Vue {
 
   private vizDetails: VolumePlotYaml = {
     csvFile: '',
+    csvFile2: '',
     shpFile: '',
     dbfFile: '',
     projection: '',
@@ -351,7 +353,7 @@ class MyComponent extends Vue {
     try {
       this.myState.loadingText = 'Loading files...'
 
-      const linkFlows = await this.myState.fileApi.getFileText(
+      const csvFlows = await this.myState.fileApi.getFileText(
         this.myState.subfolder + this.vizDetails.csvFile
       )
       const blob = await this.myState.fileApi.getFileBlob(
@@ -364,7 +366,18 @@ class MyComponent extends Vue {
       )
       const dbfFile = await readBlob.arraybuffer(blob2)
 
-      return { shpFile, dbfFile, linkFlows }
+      let csvFlows2 = ''
+      if (this.vizDetails.csvFile2) {
+        csvFlows2 = await this.myState.fileApi.getFileText(
+          this.myState.subfolder + this.vizDetails.csvFile2
+        )
+      }
+
+      // this looks weird but is not wrong.
+      // if one csvFile given, it is the project
+      // if two are given, the first is base and the second is project.
+      if (csvFlows2) return { shpFile, dbfFile, linkBaseFlows: csvFlows, linkFlows: csvFlows2 }
+      else return { shpFile, dbfFile, linkFlows: csvFlows, linkBaseFlows: csvFlows2 }
       //
     } catch (e) {
       console.error({ e })
@@ -393,19 +406,30 @@ class MyComponent extends Vue {
     this.currentTimeBin = value
     const widthFactor = this.WIDTH_SCALE * this.currentScale
 
-    if (this.showTimeRange === false) {
-      this.sumElements = []
-
-      this.map.setPaintProperty('my-layer', 'line-width', ['*', widthFactor, ['get', value]])
-      this.map.setPaintProperty('my-layer', 'line-offset', ['*', 0.5 * widthFactor, ['get', value]])
+    if (this.showTimeRange == false) {
+      this.map.setPaintProperty('my-layer', 'line-width', [
+        '*',
+        widthFactor,
+        ['abs', ['get', value]],
+      ])
+      this.map.setPaintProperty('my-layer', 'line-offset', [
+        '*',
+        0.5 * widthFactor,
+        ['abs', ['get', value]],
+      ])
       this.map.setPaintProperty('my-layer', 'line-color', [
         'case',
         ['boolean', ['feature-state', 'hover'], false],
-        '#fb0',
+        '#0f6',
         ['==', ['get', value], null],
         '#8ca',
-        '#559',
+        ['<', ['get', value], 0],
+        '#fc0',
+        '#55b',
       ])
+
+      const filter = this.showAllRoads ? null : ['!=', ['get', this.currentTimeBin], null]
+      this.map.setFilter('my-layer', filter)
     } else {
       const sumElements: any = ['+']
 
@@ -424,15 +448,17 @@ class MyComponent extends Vue {
 
       this.map.setPaintProperty('my-layer', 'line-width', ['*', widthFactor, sumElements])
       this.map.setPaintProperty('my-layer', 'line-offset', ['*', 0.5 * widthFactor, sumElements])
-      this.sumElements = sumElements
+      this.map.setPaintProperty('my-layer', 'line-color', [
+        'case',
+        ['boolean', ['feature-state', 'hover'], false],
+        '#0f6',
+        ['==', sumElements, null],
+        '#8ca',
+        ['<', sumElements, 0],
+        '#fc0',
+        '#559',
+      ])
     }
-    // set filter for background network
-    let filter: any = null
-    if (!this.showAllRoads) {
-      const expression = this.sumElements.length ? this.sumElements : ['get', this.currentTimeBin]
-      filter = ['>=', expression, 1]
-    }
-    this.map.setFilter('my-layer', filter)
   }
 
   private sumElements: any[] = []
@@ -564,7 +590,7 @@ class MyComponent extends Vue {
 
     this.setMapExtent()
 
-    this.processCSVFile(inputs)
+    this.processCSVFiles(inputs)
     this.processHeaders(inputs.linkFlows)
     this.calculateLinkProperties(this.geojson)
 
@@ -610,7 +636,7 @@ class MyComponent extends Vue {
   //   })
   // }
 
-  private processCSVFile(inputs: { linkFlows: string }) {
+  private processCSVFiles(inputs: { linkFlows: string; linkBaseFlows: string }) {
     this.dataset = {}
 
     // determine delimiter
@@ -633,6 +659,7 @@ class MyComponent extends Vue {
       delimiter,
     })
 
+    //@ts-ignore
     const key = content.meta.fields[0]
     this.idColumn = key
 
@@ -644,6 +671,51 @@ class MyComponent extends Vue {
       const numericalId = this.idLookup[originalId]
       this.dataset[numericalId] = row
     }
+
+    // SUBTRACT BASE!
+    if (inputs.linkBaseFlows) {
+      this.subtractBaseFlows(inputs.linkBaseFlows, delimiter)
+    }
+  }
+
+  private subtractBaseFlows(baseFlows: string, delimiter: string) {
+    // convert CSV
+    const content = Papaparse.parse(baseFlows, {
+      header: true,
+      dynamicTyping: true,
+      delimiter,
+    }) as any
+
+    //@ts-ignore
+    const key = content.meta.fields[0]
+
+    // console.log('---subtracting')
+
+    let numDiffs = 0
+
+    for (const row of content.data) {
+      // mapbox requires numerical IDs
+
+      const originalId = row[key]
+      const numericalId = this.idLookup[originalId]
+
+      if (this.dataset[numericalId]) {
+        // if exists in dataset, subtract
+        const altRow = this.dataset[numericalId]
+        for (const z of Object.keys(row)) altRow[z] = altRow[z] - row[z]
+        this.dataset[numericalId] = altRow
+        numDiffs++
+      } else {
+        // otherwise negate all values
+        for (const z of Object.keys(row)) {
+          if (!isNaN(row[z])) row[z] = -1 * row[z]
+        }
+        this.dataset[numericalId] = row
+      }
+    }
+
+    console.log(numDiffs, 'total DIFFs happened')
+    // console.log({ dataset: this.dataset })
   }
 
   private dailyTotals: any[] = []
@@ -661,7 +733,7 @@ class MyComponent extends Vue {
           if (key === this.idColumn) continue
 
           if (!isNaN(values[key])) {
-            const value = values[key] / this.sampleRate
+            let value = values[key] / this.sampleRate
 
             link.properties[key] = value
             daily += value
@@ -842,6 +914,7 @@ export default MyComponent
   width: 100%;
   min-height: 200px;
   background: url('./assets/thumbnail.jpg') no-repeat center;
+  /* background-color: white; */
 }
 
 .map-container {
