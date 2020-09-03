@@ -20,7 +20,9 @@ class SVNFileSystem {
     let path = this.baseUrl + scaryPath.replace(/^0-9a-zA-Z_\-\/:+/i, '')
     // console.log('FETCHING:', scaryPath)
 
+    console.log('BEFORE', path)
     path = PATH.normalize(path)
+    console.log('AFTER', path)
 
     const headers: any = {}
     const credentials = globalStore.state.credentials[this.urlId]
