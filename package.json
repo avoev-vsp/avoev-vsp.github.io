@@ -33,6 +33,7 @@
     "nprogress": "^0.2.0",
     "pako": "^1.0.11",
     "papaparse": "^5.1.1",
+    "path": "^0.12.7",
     "plotly.js": "^1.52.3",
     "proj4": "^2.6.2",
     "read-blob": "^1.1.0",

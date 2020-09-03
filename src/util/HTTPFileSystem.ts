@@ -1,3 +1,4 @@
+import PATH from 'path'
 import { DirectoryEntry, SVNProject } from '@/Globals'
 import globalStore from '@/store'
 
@@ -18,6 +19,8 @@ class SVNFileSystem {
     // hostile user could put anything in the URL really...
     let path = this.baseUrl + scaryPath.replace(/^0-9a-zA-Z_\-\/:+/i, '')
     // console.log('FETCHING:', scaryPath)
+
+    path = PATH.normalize(path)
 
     const headers: any = {}
     const credentials = globalStore.state.credentials[this.urlId]
