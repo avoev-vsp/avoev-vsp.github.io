@@ -623,6 +623,12 @@ a.footer {
   margin-left: auto;
 }
 
+@media only screen and (max-width: 900px) {
+  .colophon {
+    display: none;
+  }
+}
+
 @media only screen and (max-width: 640px) {
   .project-bar {
     padding: 1rem 1rem 1.5rem 1rem;
