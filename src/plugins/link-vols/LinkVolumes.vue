@@ -417,6 +417,14 @@ class MyComponent extends Vue {
         0.5 * widthFactor,
         ['abs', ['get', value]],
       ])
+
+      // this complicated mess is how MapBox deals with conditionals. Yuck!
+      // #0f6 -- green hover
+      // #8ca -- null, no data
+      // #55b -- bluish/purple, link volume bandwidth
+      // #00f -- bright blue, diff volume positive
+      // #ff6 -- orangish, diff volume negative
+
       this.map.setPaintProperty('my-layer', 'line-color', [
         'case',
         ['boolean', ['feature-state', 'hover'], false],
@@ -424,8 +432,8 @@ class MyComponent extends Vue {
         ['==', ['get', value], null],
         '#8ca',
         ['<', ['get', value], 0],
-        '#fc0',
-        '#55b',
+        '#f63',
+        this.vizDetails.csvFile2 ? '#09f' : '#55b',
       ])
 
       const filter = this.showAllRoads ? null : ['!=', ['get', this.currentTimeBin], null]
