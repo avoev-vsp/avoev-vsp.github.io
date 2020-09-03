@@ -17,12 +17,14 @@ class SVNFileSystem {
 
   private async _getFileResponse(scaryPath: string): Promise<Response> {
     // hostile user could put anything in the URL really...
-    let path = this.baseUrl + scaryPath.replace(/^0-9a-zA-Z_\-\/:+/i, '')
+    let path = scaryPath.replace(/^0-9a-zA-Z_\-\/:+/i, '')
     // console.log('FETCHING:', scaryPath)
 
-    console.log('BEFORE', path)
     path = PATH.normalize(path)
-    console.log('AFTER', path)
+
+    path = this.baseUrl + path
+
+    console.log('FETCHING:', path)
 
     const headers: any = {}
     const credentials = globalStore.state.credentials[this.urlId]
