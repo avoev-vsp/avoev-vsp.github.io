@@ -12,14 +12,15 @@
       p.description {{ this.vizDetails.description }}
 
     .widgets
-      h4.heading Uhrzeit
-      time-slider.time-slider(v-if="headers.length > 0"
-        :useRange='showTimeRange'
-        :stops='headers'
-        @change='bounceTimeSlider')
-      label.checkbox
-         input(type="checkbox" v-model="showTimeRange")
-         | &nbsp;Zeitraum
+      .uhrzeit(v-show="headers.length > 2")
+        h4.heading Uhrzeit
+        time-slider.time-slider(v-if="headers.length > 0"
+          :useRange='showTimeRange'
+          :stops='headers'
+          @change='bounceTimeSlider')
+        label.checkbox
+          input(type="checkbox" v-model="showTimeRange")
+          | &nbsp;Zeitraum
 
       h4.heading Linienbreiten
       scale-slider.time-slider(v-if="headers.length > 0"
@@ -105,7 +106,7 @@ class MyComponent extends Vue {
 
   private TOTAL_MSG = 'Alle >>'
   private SCALE_STOPS = [0.01, 0.1, 0.2, 0.5, 1.0, 2, 5, 10, 100]
-  private WIDTH_SCALE = 0.01
+  private WIDTH_SCALE = 0.005
 
   private globalState = globalStore.state
 
@@ -275,7 +276,7 @@ class MyComponent extends Vue {
         bearing: 0,
         container: this.mapId,
         logoPosition: 'bottom-right',
-        style: 'mapbox://styles/mapbox/streets-v11',
+        style: 'mapbox://styles/mapbox/light-v10',
         pitch: 0,
       })
 
@@ -440,16 +441,16 @@ class MyComponent extends Vue {
       ])
 
       // this complicated mess is how MapBox deals with conditionals. Yuck!
-      // #0f6 -- green hover
+      // #ff0 -- yellow hover
       // #8ca -- null, no data
       // #55b -- bluish/purple, link volume bandwidth
-      // #00f -- bright blue, diff volume positive
-      // #ff6 -- orangish, diff volume negative
+      // #900 -- deep red, diff volume positive
+      // #5f5 -- bright light green, diff volume negative
 
       this.map.setPaintProperty('my-layer', 'line-color', [
         'case',
         ['boolean', ['feature-state', 'hover'], false],
-        '#0f6',
+        '#ff0',
         ['==', ['get', value], null],
         '#8ca',
         ['<', ['get', value], 0],
