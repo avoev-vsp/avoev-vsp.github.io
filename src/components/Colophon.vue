@@ -5,7 +5,7 @@
       img(src="@/assets/images/tu-logo.png")
   .professor Kai Nagel, Professor
 
-  .team AVÖV Team
+  .team TU AVÖV Team
 
   p Ihab Kaddoura
   p Gregor Leich

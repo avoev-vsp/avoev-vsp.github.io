@@ -795,6 +795,8 @@ class MyComponent extends Vue {
       centroid.properties.id = feature.id
       centroid.id = feature.id
 
+      // console.log(centroid.id, centroid.geometry.coordinates[1], centroid.geometry.coordinates[0])
+
       let dailyFrom = Math.round(this.marginals.rowTotal[feature.id])
       let dailyTo = Math.round(this.marginals.colTotal[feature.id])
 
