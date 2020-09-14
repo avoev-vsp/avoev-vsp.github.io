@@ -175,8 +175,9 @@ export default class VueComponent extends Vue {
 
         if (details.title) {
           const crumbs = this.globalState.breadcrumbs
-          crumbs.pop()
-          crumbs.push({ label: details.title, url: '/' })
+          const lastElement = crumbs.pop()
+          const url = lastElement ? lastElement.url : '/'
+          crumbs.push({ label: details.title, url })
         }
       }
     } catch (e) {
