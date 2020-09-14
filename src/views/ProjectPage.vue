@@ -20,7 +20,7 @@
     .readme-header
       .curate-content.markdown(v-if="myState.readme" v-html="myState.readme")
 
-    .curate-content(v-if="projectYaml.length > 1")
+    .curate-content(v-if="projectYaml.length")
       hr
       h3 Ergebnisse
       p Die folgenden Links führen zu den Ergebnissen verschiedener Simulationsexperimente für die Stadt Gladbeck und Umgebung.
@@ -59,6 +59,20 @@
                   :thumbnail="true"
                   :style="{'pointer-events': viz.component==='image-view' ? 'auto' : 'none'}"
                   @title="updateTitle(index, $event)")
+
+    //- file system folders
+    //- h3.curate-heading(v-if="myState.folders.length > 1")  Folders
+
+    //- .curate-content(v-if="myState.folders.length > 1")
+    //-   .folder(:class="{fade: myState.isLoading}"
+    //-         v-for="folder in myState.folders" :key="folder.name"
+    //-         @click="openOutputFolder(folder, false)"
+    //-         @click.middle="openOutputFolder(folder, true)"
+    //-         @click.meta="openOutputFolder(folder, true)"
+    //-         @click.ctrl="openOutputFolder(folder, true)"
+    //-         )
+    //-     p {{ folder }}
+
  colophon.colophon
 
 </template>
@@ -324,8 +338,24 @@ export default class VueComponent extends Vue {
     try {
       const y = await this.myState.svnRoot.getFileText('runs.yml')
 
-      this.projectYaml = yaml.parse(y)
-      console.log({ yaml: this.projectYaml })
+      const runs = yaml.parse(y)
+      console.log({ runs })
+
+      this.projectYaml = []
+      for (const run of runs) {
+        const folder = run.folder
+        const path = `${this.myState.svnRoot}/`
+        try {
+          const metadata = await this.myState.svnRoot.getFileText(`${folder}/metadata.yml`)
+          const details: any = yaml.parse(metadata)
+          console.log({ DETAILS: details })
+          details.folder = folder
+          this.projectYaml.push(details)
+        } catch (e) {
+          console.error('no metadata for', folder)
+        }
+      }
+      console.log({ projecYaml: this.projectYaml })
     } catch (e) {
       // Bad things happened! Tell user
       console.log('BAD PAGE')
@@ -368,7 +398,7 @@ export default class VueComponent extends Vue {
       if (this.myState.errorStatus === '<h3>Error</h3>') this.myState.errorStatus = '' + e
 
       if (this.myState.svnProject) {
-        this.myState.errorStatus += `<p><i>${this.myState.svnProject.svn}${this.myState.subfolder}</i></p>`
+        this.myState.errorStatus += `<p><i>${this.myState.svnProject.svn}/${this.myState.subfolder}</i></p>`
       }
 
       // maybe it failed because password?
@@ -477,17 +507,29 @@ h2 {
   box-shadow: none;
 }
 
+.folder h3 {
+  line-height: 1.7rem;
+}
+
+.folder p {
+  line-height: 1.2rem;
+}
+
 .notes-item {
   list-style-type: square;
   margin-left: 1rem;
-  margin-top: 0.25rem;
+  margin-top: 0.5rem;
   color: #222;
 }
 
+li.notes-item {
+  line-height: 1.3rem;
+}
+
 .folder:hover {
-  box-shadow: 0 4px 6px 4px rgba(0, 0, 0, 0.2);
+  background-color: #ffd;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.05), 0 3px 10px 0 rgba(0, 0, 0, 0.05);
   transition: box-shadow 0.1s ease-in-out;
-  background-color: white;
 }
 
 .banner {

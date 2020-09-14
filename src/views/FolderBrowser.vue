@@ -1,12 +1,13 @@
 <template lang="pug">
 #project-component
-
   .project-bar(v-if="myState.svnProject")
     .details
       h2 {{ globalState.breadcrumbs[globalState.breadcrumbs.length -1].label }}
       p {{ myState.svnProject.description }}
     .logo
         img(height=160 src="/logo-avoev.png")
+
+  //- zoom-template
 
   .details(v-if="myState.svnProject")
 
@@ -158,7 +159,30 @@ export default class VueComponent extends Vue {
     // save them!
     globalStore.commit('setBreadCrumbs', crumbs)
 
+    // see if we have metadata file
+    this.fetchFolderMetadata()
+
     return crumbs
+  }
+
+  private async fetchFolderMetadata() {
+    try {
+      if (this.myState.svnRoot) {
+        const metadata = await this.myState.svnRoot.getFileText(
+          this.myState.subfolder + '/metadata.yml'
+        )
+        const details = yaml.parse(metadata)
+
+        if (details.title) {
+          const crumbs = this.globalState.breadcrumbs
+          crumbs.pop()
+          crumbs.push({ label: details.title, url: '/' })
+        }
+      }
+    } catch (e) {
+      // if something went wrong the UI will just show the folder name
+      // which is fine
+    }
   }
 
   private mounted() {
@@ -222,9 +246,11 @@ export default class VueComponent extends Vue {
 
     // make sure page is rendered before we attach zoom semantics
     await this.$nextTick()
-    mediumZoom('.medium-zoom', {
-      background: '#444450',
-    })
+    // mediumZoom('.medium-zoom', {
+    //   background: '#444450',
+    //   template: '#zoom-template',
+    //   container: '#zoom-container',
+    // })
   }
 
   private async showReadme() {

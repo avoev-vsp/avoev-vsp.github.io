@@ -24,7 +24,7 @@ class SVNFileSystem {
 
     path = this.baseUrl + path
 
-    console.log('FETCHING:', path)
+    // console.log('FETCHING:', path)
 
     const headers: any = {}
     const credentials = globalStore.state.credentials[this.urlId]
