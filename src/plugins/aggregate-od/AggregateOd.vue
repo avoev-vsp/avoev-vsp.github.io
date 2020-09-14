@@ -222,9 +222,9 @@ class MyComponent extends Vue {
       this.buildRouteFromUrl()
     }
 
-    if (!this.thumbnail) this.generateBreadcrumbs()
-
     await this.getVizDetails()
+
+    if (!this.thumbnail) this.generateBreadcrumbs()
 
     this.setupMap()
   }
@@ -251,7 +251,7 @@ class MyComponent extends Vue {
     this.updateCentroidLabels()
   }
 
-  private generateBreadcrumbs() {
+  private async generateBreadcrumbs() {
     if (!this.myState.fileSystem) return []
 
     const crumbs = [
@@ -272,6 +272,27 @@ class MyComponent extends Vue {
         url: '/' + this.myState.fileSystem.url + buildFolder,
       })
     }
+
+    // get run title in there
+    try {
+      const metadata = await this.myState.fileApi.getFileText(
+        this.myState.subfolder + '/metadata.yml'
+      )
+      const details = yaml.parse(metadata)
+
+      if (details.title) {
+        const lastElement = crumbs.pop()
+        const url = lastElement ? lastElement.url : '/'
+        crumbs.push({ label: details.title, url })
+      }
+    } catch (e) {
+      // if something went wrong the UI will just show the folder name
+      // which is fine
+    }
+    crumbs.push({
+      label: this.vizDetails.title ? this.vizDetails.title : '',
+      url: '#',
+    })
 
     // save them!
     globalStore.commit('setBreadCrumbs', crumbs)

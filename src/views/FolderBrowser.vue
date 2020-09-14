@@ -134,7 +134,7 @@ export default class VueComponent extends Vue {
     return svnProject[0]
   }
 
-  private generateBreadcrumbs() {
+  private async generateBreadcrumbs() {
     if (!this.myState.svnProject) return []
 
     const crumbs = [
@@ -156,16 +156,7 @@ export default class VueComponent extends Vue {
       })
     }
 
-    // save them!
-    globalStore.commit('setBreadCrumbs', crumbs)
-
-    // see if we have metadata file
-    this.fetchFolderMetadata()
-
-    return crumbs
-  }
-
-  private async fetchFolderMetadata() {
+    // get run title in there
     try {
       if (this.myState.svnRoot) {
         const metadata = await this.myState.svnRoot.getFileText(
@@ -174,7 +165,6 @@ export default class VueComponent extends Vue {
         const details = yaml.parse(metadata)
 
         if (details.title) {
-          const crumbs = this.globalState.breadcrumbs
           const lastElement = crumbs.pop()
           const url = lastElement ? lastElement.url : '/'
           crumbs.push({ label: details.title, url })
@@ -184,6 +174,11 @@ export default class VueComponent extends Vue {
       // if something went wrong the UI will just show the folder name
       // which is fine
     }
+
+    // save them!
+    globalStore.commit('setBreadCrumbs', crumbs)
+
+    return crumbs
   }
 
   private mounted() {
@@ -247,11 +242,11 @@ export default class VueComponent extends Vue {
 
     // make sure page is rendered before we attach zoom semantics
     await this.$nextTick()
-    // mediumZoom('.medium-zoom', {
-    //   background: '#444450',
-    //   template: '#zoom-template',
-    //   container: '#zoom-container',
-    // })
+    mediumZoom('.medium-zoom', {
+      background: '#444450',
+      // template: '#zoom-template',
+      // container: '#zoom-container',
+    })
   }
 
   private async showReadme() {

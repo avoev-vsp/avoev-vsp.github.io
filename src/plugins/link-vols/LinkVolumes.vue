@@ -189,7 +189,7 @@ class MyComponent extends Vue {
     this.map.fitBounds(this.mapExtentXYXY, options)
   }
 
-  private generateBreadcrumbs() {
+  private async generateBreadcrumbs() {
     if (!this.myState.fileSystem) return []
 
     const crumbs = [
@@ -210,6 +210,27 @@ class MyComponent extends Vue {
         url: '/' + this.myState.fileSystem.url + buildFolder,
       })
     }
+
+    // get run title in there
+    try {
+      const metadata = await this.myState.fileApi.getFileText(
+        this.myState.subfolder + '/metadata.yml'
+      )
+      const details = yaml.parse(metadata)
+
+      if (details.title) {
+        const lastElement = crumbs.pop()
+        const url = lastElement ? lastElement.url : '/'
+        crumbs.push({ label: details.title, url })
+      }
+    } catch (e) {
+      // if something went wrong the UI will just show the folder name
+      // which is fine
+    }
+    crumbs.push({
+      label: this.vizDetails.title ? this.vizDetails.title : '',
+      url: '#',
+    })
 
     // save them!
     globalStore.commit('setBreadCrumbs', crumbs)
@@ -351,7 +372,7 @@ class MyComponent extends Vue {
 
   private async loadFiles() {
     try {
-      this.myState.loadingText = 'Loading files...'
+      this.myState.loadingText = 'Dateien laden...'
 
       const csvFlows = await this.myState.fileApi.getFileText(
         this.myState.subfolder + this.vizDetails.csvFile

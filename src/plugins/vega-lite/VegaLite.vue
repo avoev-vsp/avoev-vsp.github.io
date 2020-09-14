@@ -24,6 +24,7 @@
 
 import nprogress from 'nprogress'
 import vegaEmbed from 'vega-embed'
+import yaml from 'yaml'
 import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
 
 import globalStore from '@/store.ts'
@@ -67,12 +68,12 @@ class VegaComponent extends Vue {
     return this.myState.yamlConfig.replace(/[\W_]+/g, '')
   }
 
-  public mounted() {
+  public async mounted() {
     if (!this.yamlConfig) this.buildRouteFromUrl()
 
-    if (!this.thumbnail) this.generateBreadcrumbs()
+    await this.getVizDetails()
 
-    this.getVizDetails()
+    if (!this.thumbnail) this.generateBreadcrumbs()
   }
 
   @Watch('globalState.authAttempts') authenticationChanged() {
@@ -104,7 +105,7 @@ class VegaComponent extends Vue {
     return false
   }
 
-  private generateBreadcrumbs() {
+  private async generateBreadcrumbs() {
     if (!this.myState.fileSystem) return []
 
     const crumbs = [
@@ -125,6 +126,27 @@ class VegaComponent extends Vue {
         url: '/' + this.myState.fileSystem.url + buildFolder,
       })
     }
+
+    // get run title in there
+    try {
+      const metadata = await this.myState.fileApi.getFileText(
+        this.myState.subfolder + '/metadata.yml'
+      )
+      const details = yaml.parse(metadata)
+
+      if (details.title) {
+        const lastElement = crumbs.pop()
+        const url = lastElement ? lastElement.url : '/'
+        crumbs.push({ label: details.title, url })
+      }
+    } catch (e) {
+      // if something went wrong the UI will just show the folder name
+      // which is fine
+    }
+    crumbs.push({
+      label: this.vizDetails.title ? this.vizDetails.title : '',
+      url: '#',
+    })
 
     // save them!
     globalStore.commit('setBreadCrumbs', crumbs)
