@@ -453,8 +453,8 @@ class MyComponent extends Vue {
         ['==', ['get', value], null],
         '#8ca',
         ['<', ['get', value], 0],
-        '#f63',
-        this.vizDetails.csvFile2 ? '#09f' : '#55b',
+        '#5f5',
+        this.vizDetails.csvFile2 ? '#900' : '#55b',
       ])
 
       const filter = this.showAllRoads ? null : ['!=', ['get', this.currentTimeBin], null]
