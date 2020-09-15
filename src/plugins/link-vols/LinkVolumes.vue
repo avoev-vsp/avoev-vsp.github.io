@@ -276,7 +276,7 @@ class MyComponent extends Vue {
         bearing: 0,
         container: this.mapId,
         logoPosition: 'bottom-right',
-        style: 'mapbox://styles/mapbox/light-v10',
+        style: 'mapbox://styles/mapbox/streets-v11',
         pitch: 0,
       })
 
