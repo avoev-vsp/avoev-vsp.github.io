@@ -45,11 +45,20 @@
 import * as shapefile from 'shapefile'
 import { debounce } from 'debounce'
 import { FeatureCollection, Feature } from 'geojson'
+import {
+  decompressFromUint8ArrayAsync,
+  decompressAsync,
+  parseAsync,
+  decompressFromUTF16Async,
+} from 'js-coroutines'
 import mapboxgl, { LngLat, MapMouseEvent, PositionOptions, MapLayerMouseEvent } from 'mapbox-gl'
 import nprogress from 'nprogress'
 import Papaparse from 'papaparse'
+import pako from 'pako'
 import proj4 from 'proj4'
 import readBlob from 'read-blob'
+import { blobToArrayBuffer, blobToBinaryString } from 'blob-util'
+import { bbox } from '@turf/turf'
 import VueSlider from 'vue-slider-component'
 import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
 import yaml from 'yaml'
@@ -63,13 +72,13 @@ import { FileSystem, SVNProject, VisualizationPlugin } from '@/Globals'
 import HTTPFileSystem from '@/util/HTTPFileSystem'
 
 import globalStore from '@/store'
-import { isNumber } from '@turf/turf'
 
 interface VolumePlotYaml {
   shpFile: string
   dbfFile: string
   csvFile: string
   csvFile2?: string
+  geojsonFile?: string
   projection: string
   scaleFactor?: number
   title?: string
@@ -132,6 +141,7 @@ class MyComponent extends Vue {
     csvFile2: '',
     shpFile: '',
     dbfFile: '',
+    geojsonFile: '',
     projection: '',
     scaleFactor: 1,
     title: '',
@@ -179,6 +189,8 @@ class MyComponent extends Vue {
   }
 
   private setMapExtent() {
+    this.mapExtentXYXY = bbox(this.geojson)
+
     localStorage.setItem(this.myState.subfolder + '-bounds', JSON.stringify(this.mapExtentXYXY))
 
     const options = this.thumbnail
@@ -313,6 +325,7 @@ class MyComponent extends Vue {
       // no real consequence
     }
   }
+
   private async getVizDetails() {
     try {
       const text = await this.myState.fileApi.getFileText(
@@ -375,19 +388,10 @@ class MyComponent extends Vue {
     try {
       this.myState.loadingText = 'Dateien laden...'
 
+      // CSV data
       const csvFlows = await this.myState.fileApi.getFileText(
         this.myState.subfolder + this.vizDetails.csvFile
       )
-      const blob = await this.myState.fileApi.getFileBlob(
-        this.myState.subfolder + this.vizDetails.shpFile
-      )
-      const shpFile = await readBlob.arraybuffer(blob)
-
-      const blob2 = await this.myState.fileApi.getFileBlob(
-        this.myState.subfolder + this.vizDetails.dbfFile
-      )
-      const dbfFile = await readBlob.arraybuffer(blob2)
-
       let csvFlows2 = ''
       if (this.vizDetails.csvFile2) {
         csvFlows2 = await this.myState.fileApi.getFileText(
@@ -395,11 +399,40 @@ class MyComponent extends Vue {
         )
       }
 
+      let shpFile = null
+      let dbfFile = null
+      let geojsonFile = null
+
+      // Networks
+      if (this.vizDetails.geojsonFile) {
+        console.log('reading', this.vizDetails.geojsonFile)
+        const blob = await this.myState.fileApi.getFileBlob(
+          this.myState.subfolder + this.vizDetails.geojsonFile
+        )
+        geojsonFile = blob ? await blobToBinaryString(blob) : null
+      } else {
+        console.log('reading', this.vizDetails.shpFile)
+        const blob = await this.myState.fileApi.getFileBlob(
+          this.myState.subfolder + this.vizDetails.shpFile
+        )
+        shpFile = await readBlob.arraybuffer(blob)
+
+        const blob2 = await this.myState.fileApi.getFileBlob(
+          this.myState.subfolder + this.vizDetails.dbfFile
+        )
+        dbfFile = await readBlob.arraybuffer(blob2)
+      }
+
       // this looks weird but is not wrong.
       // if one csvFile given, it is the project
       // if two are given, the first is base and the second is project.
-      if (csvFlows2) return { shpFile, dbfFile, linkBaseFlows: csvFlows, linkFlows: csvFlows2 }
-      else return { shpFile, dbfFile, linkFlows: csvFlows, linkBaseFlows: csvFlows2 }
+      return {
+        shpFile,
+        dbfFile,
+        linkFlows: csvFlows2 ? csvFlows2 : csvFlows,
+        linkBaseFlows: csvFlows2 ? csvFlows : csvFlows2,
+        geojsonFile,
+      }
       //
     } catch (e) {
       console.error({ e })
@@ -500,6 +533,27 @@ class MyComponent extends Vue {
     // data is in format: o,d, value[1], value[2], value[3]...
     const headers = lines[0].split(separator).map(a => a.trim())
     this.headers = [this.TOTAL_MSG].concat(headers.slice(1))
+  }
+
+  private async processGeojsonFile(files: { geojsonFile: any }) {
+    this.myState.loadingText = 'Loading network...'
+
+    const xtext = pako.inflate(files.geojsonFile, { to: 'string' })
+    const geojson = JSON.parse(xtext) // await parseAsync(xtext) //
+
+    const idPropertyName = this.vizDetails.shpFileIdProperty
+      ? this.vizDetails.shpFileIdProperty
+      : 'Id'
+
+    let id = 0
+    for (const feature of geojson.features) {
+      // Save ID somewhere more helpful
+      if (feature.properties) {
+        feature.id = id++
+        this.idLookup[feature.properties[idPropertyName]] = feature.id
+      }
+    }
+    return geojson
   }
 
   private async processShapefile(files: any) {
@@ -616,7 +670,9 @@ class MyComponent extends Vue {
       return
     }
 
-    this.geojson = await this.processShapefile(inputs)
+    this.geojson = this.vizDetails.geojsonFile
+      ? await this.processGeojsonFile(inputs)
+      : await this.processShapefile(inputs)
 
     this.setMapExtent()
 
@@ -631,40 +687,10 @@ class MyComponent extends Vue {
     this.myState.loadingText = ''
 
     await this.$nextTick()
-    // this.addDailyChart()
     nprogress.done()
   }
 
   private dailyGrandTotal = 0
-
-  // private addDailyChart() {
-  //   const data = Object.keys(this.dailyTotals).map((a: any) => {
-  //     this.dailyGrandTotal += this.dailyTotals[a]
-  //     return { hour: a, trips: this.dailyTotals[a] }
-  //   })
-
-  //   // @ts-ignore
-  //   const summaryChart = new Morris.Bar({
-  //     // ID of the element in which to draw the chart.
-  //     element: 'summary-chart',
-  //     data: data,
-  //     stacked: true,
-  //     xkey: 'hour', // The name of the data record attribute that contains x-values.
-  //     ykeys: ['trips'], // A list of names of data record attributes that contain y-values.
-  //     // ymax: 100,
-  //     labels: ['Trips'], // 'Dropoffs'],
-  //     barColors: ['#3377cc'], // , '#cc0033'],
-  //     xLabels: 'Uhr',
-  //     xLabelAngle: 60,
-  //     xLabelFormat: (row: any) => {
-  //       return row.x + ':00'
-  //     },
-  //     // yLabelFormat: yFmt,
-  //     hideHover: true,
-  //     parseTime: true,
-  //     resize: true,
-  //   })
-  // }
 
   private processCSVFiles(inputs: { linkFlows: string; linkBaseFlows: string }) {
     this.dataset = {}

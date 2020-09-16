@@ -339,7 +339,6 @@ export default class VueComponent extends Vue {
       const y = await this.myState.svnRoot.getFileText('runs.yml')
 
       const runs = yaml.parse(y)
-      console.log({ runs })
 
       this.projectYaml = []
       for (const run of runs) {
@@ -348,14 +347,13 @@ export default class VueComponent extends Vue {
         try {
           const metadata = await this.myState.svnRoot.getFileText(`${folder}/metadata.yml`)
           const details: any = yaml.parse(metadata)
-          console.log({ DETAILS: details })
+
           details.folder = folder
           this.projectYaml.push(details)
         } catch (e) {
           console.error('no metadata for', folder)
         }
       }
-      console.log({ projecYaml: this.projectYaml })
     } catch (e) {
       // Bad things happened! Tell user
       console.log('BAD PAGE')

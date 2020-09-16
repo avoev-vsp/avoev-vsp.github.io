@@ -40,7 +40,7 @@ export default class ScaleSlider extends Vue {
 
   @Watch('sliderValue')
   private sliderChangedEvent(result: any) {
-    console.log(result)
+    // console.log(result)
     this.$emit('change', result)
   }
 }
