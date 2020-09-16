@@ -187,7 +187,7 @@ class MyComponent extends Vue {
           padding: { top: 10, bottom: 10, right: 10, left: 250 },
           animate: false,
         }
-    // this.map.fitBounds(this.mapExtentXYXY, options)
+    this.map.fitBounds(this.mapExtentXYXY, options)
   }
 
   private async generateBreadcrumbs() {
@@ -277,14 +277,10 @@ class MyComponent extends Vue {
         container: this.mapId,
         logoPosition: 'bottom-right',
         style: 'mapbox://styles/mapbox/streets-v11',
-        bounds: [
-          [6.9, 51.4],
-          [7.05, 51.7],
-        ],
         pitch: 0,
       })
 
-      // this.findCenter()
+      this.findCenter()
 
       this.map.on('style.load', this.mapIsReady)
       this.map.addControl(new mapboxgl.NavigationControl(), 'top-right')
