@@ -1063,7 +1063,7 @@ class MyComponent extends Vue {
       this.zoneData[i][j] = values
 
       // calculate daily/total values
-      const daily = values.reduce((a, b) => a + b, 0)
+      const daily = values.reduce((a: any, b: any) => a + b, 0)
 
       if (!this.dailyData[i]) this.dailyData[i] = {}
       this.dailyData[i][j] = daily
