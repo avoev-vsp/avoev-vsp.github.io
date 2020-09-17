@@ -1,6 +1,6 @@
 <template lang="pug">
 #scale-container
-  p.title Scale:
+  p.title Linienbreite:
     .scale-element {{ "|↔︎|" }}
     .scale-scale {{ "~ " + this.rows[0] + " trips" }}
 

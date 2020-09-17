@@ -1,6 +1,6 @@
 <template lang="pug">
 #legend-container
-  p.title Legend:
+  p.title Legende:
   .legend-item(v-for="item in rows")
     .legend-col(v-if ="typeof item === 'string' && item.includes('#')" :style="{'background-color': item}")
     .legend-element1(v-if ="typeof item === 'string' && !item.includes('#') && item == ('↓')") {{item}}

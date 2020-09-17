@@ -43,7 +43,7 @@
         .subheading Linienbreiten
         scale-slider.scale-slider(:stops='scaleValues' :initialTime='1' @change='bounceScaleSlider')
 
-        .subheading Ausblenden unten
+        .subheading Ausblenden bis
         line-filter-slider.scale-slider(
           :initialValue="lineFilter"
           @change='bounceLineFilter')
@@ -101,7 +101,7 @@ interface AggOdYaml {
   idColumn?: string
 }
 
-const TOTAL_MSG = 'All >>'
+const TOTAL_MSG = 'Alle >>'
 const FADED = 0.0 // 0.15
 
 const SCALE_WIDTH = [1, 3, 5, 10, 25, 50, 100, 150, 200, 300, 400, 450, 500]
@@ -775,7 +775,7 @@ class MyComponent extends Vue {
     let to = 0
 
     // daily
-    if (timePeriod === 'All >>') {
+    if (timePeriod === 'Alle >>') {
       from = Math.round(this.marginals.rowTotal[feature.id])
       to = Math.round(this.marginals.colTotal[feature.id])
       return { from, to }
@@ -1215,8 +1215,7 @@ class MyComponent extends Vue {
   }
 
   private changedLineFilter(value: any) {
-    if (value === 'None') this.lineFilter = 0
-    else if (value === 'All') this.lineFilter = 1e25
+    if (value === 'Alle') this.lineFilter = Infinity
     else this.lineFilter = value
 
     this.updateSpiderLinks()
