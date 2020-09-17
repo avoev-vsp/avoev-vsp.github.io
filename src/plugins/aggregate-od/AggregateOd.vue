@@ -20,40 +20,40 @@
       p.description {{ this.vizDetails.description }}
 
     .widgets
-      h4.heading Time of day
+      h4.heading Uhrzeit
       time-slider.time-slider(v-if="headers.length > 0"
         :useRange='showTimeRange'
         :stops='headers'
         @change='bounceTimeSlider')
       label.checkbox
          input(type="checkbox" v-model="showTimeRange")
-         | &nbsp;Show range
+         | &nbsp;Zeitraum
 
-      h4.heading Bubbles
+      h4.heading Kreise
       .white-box
         label.checkbox
           input(type="checkbox" v-model="showCentroids")
-          | &nbsp;Show centroid bubbles
+          | &nbsp;Kreise anzeigen
         label.checkbox
           input(type="checkbox" v-model="showCentroidLabels")
-          | &nbsp;Show labels
+          | &nbsp;Nummern anzeigen
 
-      h4.heading Lines
+      h4.heading Strecken
       .white-box
-        .subheading Scale width:
+        .subheading Linienbreiten
         scale-slider.scale-slider(:stops='scaleValues' :initialTime='1' @change='bounceScaleSlider')
 
-        .subheading Hide lines below:
+        .subheading Ausblenden unten
         line-filter-slider.scale-slider(
           :initialValue="lineFilter"
           @change='bounceLineFilter')
 
-      h4.heading Show totals for
+      h4.heading Insgesamt für
       .buttons-bar
         // {{rowName}}
-        button.button(@click='clickedOrigins' :class='{"is-link": isOrigin ,"is-active": isOrigin}') Origins
+        button.button(@click='clickedOrigins' :class='{"is-link": isOrigin ,"is-active": isOrigin}') Quellen
         // {{colName}}
-        button.button(hint="hide" @click='clickedDestinations' :class='{"is-link": !isOrigin,"is-active": !isOrigin}') Destinations
+        button.button(hint="hide" @click='clickedDestinations' :class='{"is-link": !isOrigin,"is-active": !isOrigin}') Zielorte
 
 </template>
 
@@ -65,6 +65,7 @@ import * as turf from '@turf/turf'
 import colormap from 'colormap'
 import { debounce } from 'debounce'
 import { FeatureCollection, Feature } from 'geojson'
+import { forEachAsync } from 'js-coroutines'
 import mapboxgl, { MapMouseEvent, PositionOptions } from 'mapbox-gl'
 import { multiPolygon } from '@turf/turf'
 import nprogress from 'nprogress'
@@ -182,7 +183,7 @@ class MyComponent extends Vue {
   private selectedCentroid = 0
   private maxZonalTotal: number = 0
 
-  private loadingText: string = 'Aggregate Origin/Destination Flows'
+  private loadingText: string = 'Aggregierte Quell-Ziel Muster'
   private mymap!: mapboxgl.Map
   private project: any = {}
 
@@ -356,7 +357,7 @@ class MyComponent extends Vue {
 
   private async loadFiles() {
     try {
-      this.loadingText = 'Loading files...'
+      this.loadingText = 'Dateien laden...'
 
       const odFlows = await this.myState.fileApi.getFileText(
         this.myState.subfolder + '/' + this.vizDetails.csvFile
@@ -450,8 +451,8 @@ class MyComponent extends Vue {
     const files = await this.loadFiles()
     if (files) {
       this.geojson = await this.processShapefile(files)
-      this.processHourlyData(files.odFlows)
-      this.marginals = this.getDailyDataSummary()
+      await this.processHourlyData(files.odFlows)
+      this.marginals = await this.getDailyDataSummary()
       this.buildCentroids(this.geojson)
       this.convertRegionColors(this.geojson)
       this.addGeojsonToMap(this.geojson)
@@ -923,14 +924,15 @@ class MyComponent extends Vue {
   }
 
   private async processShapefile(files: any) {
-    this.loadingText = 'Converting to GeoJSON...'
+    this.loadingText = 'Verkehrsnetz bauarbeiten...'
     const geojson = await shapefile.read(files.shpFile, files.dbfFile)
 
     // if we have lots of features, then we should filter the LINES for performance
     if (geojson.features.length > 150) this.lineFilter = 10
 
-    this.loadingText = 'Converting coordinates...'
-    for (const feature of geojson.features) {
+    this.loadingText = 'Koordinaten berechnen...'
+
+    await forEachAsync(geojson.features, (feature: any) => {
       // 'id' column used for lookup, unless idColumn is set in YAML
       if (!this.idColumn && feature.properties) this.idColumn = Object.keys(feature.properties)[0]
 
@@ -947,8 +949,7 @@ class MyComponent extends Vue {
         console.error('ERR with feature: ' + feature)
         console.error(e)
       }
-    }
-
+    })
     return geojson
   }
 
@@ -997,23 +998,17 @@ class MyComponent extends Vue {
     return newCoords
   }
 
-  private getDailyDataSummary() {
+  private async getDailyDataSummary() {
     const rowTotal: any = {}
     const colTotal: any = {}
     const fromCentroid: any = {}
     const toCentroid: any = {}
 
-    for (const row in this.zoneData) {
-      if (!this.zoneData.hasOwnProperty(row)) continue
-      if (!row) continue
-
+    await forEachAsync(Object.keys(this.zoneData), (row: any) => {
       // store number of time periods (no totals here)
       fromCentroid[row] = Array(this.headers.length - 1).fill(0)
 
-      for (const col in this.zoneData[row]) {
-        if (!this.zoneData[row].hasOwnProperty(col)) continue
-        if (!col) continue
-
+      for (const col of Object.keys(this.zoneData[row])) {
         // daily totals
         if (!rowTotal[row]) rowTotal[row] = 0
         if (!colTotal[col]) colTotal[col] = 0
@@ -1034,12 +1029,15 @@ class MyComponent extends Vue {
           }
         }
       }
+    })
+
+    for (const row in this.zoneData) {
     }
     return { rowTotal, colTotal, from: fromCentroid, to: toCentroid }
   }
 
-  private processHourlyData(csvData: string) {
-    this.loadingText = 'Processing hourly data...'
+  private async processHourlyData(csvData: string) {
+    this.loadingText = 'Uhrzeitdaten entwicklen...'
 
     const lines = csvData.split('\n')
     const separator = lines[0].indexOf(';') > 0 ? ';' : ','
@@ -1052,10 +1050,10 @@ class MyComponent extends Vue {
 
     // console.log(this.headers)
 
-    for (const row of lines.slice(1)) {
+    await forEachAsync(lines.slice(1), (row: any) => {
       // skip header row
       const columns = row.split(separator)
-      const values = columns.slice(2).map(a => parseFloat(a))
+      const values = columns.slice(2).map((a: any) => parseFloat(a))
 
       // build zone matrix
       const i = columns[0]
@@ -1075,7 +1073,8 @@ class MyComponent extends Vue {
         const rowName = String(columns[0]) + ':' + String(columns[1])
         this.linkData[rowName] = { orig: columns[0], dest: columns[1], daily, values }
       }
-    }
+    })
+
     // console.log({ DAILY: this.dailyData, LINKS: this.linkData, ZONES: this.zoneData })
   }
 
@@ -1104,7 +1103,7 @@ class MyComponent extends Vue {
         type: 'fill',
         paint: {
           'fill-color': ['rgb', ['get', 'blue'], ['get', 'blue'], 255],
-          'fill-opacity': 0.7,
+          'fill-opacity': 0.5,
         },
       },
       'road-primary'

@@ -45,12 +45,7 @@
 import * as shapefile from 'shapefile'
 import { debounce } from 'debounce'
 import { FeatureCollection, Feature } from 'geojson'
-import {
-  decompressFromUint8ArrayAsync,
-  decompressAsync,
-  parseAsync,
-  decompressFromUTF16Async,
-} from 'js-coroutines'
+import { forEachAsync } from 'js-coroutines'
 import mapboxgl, { LngLat, MapMouseEvent, PositionOptions, MapLayerMouseEvent } from 'mapbox-gl'
 import nprogress from 'nprogress'
 import Papaparse from 'papaparse'
@@ -131,7 +126,7 @@ class MyComponent extends Vue {
     subfolder: this.subfolder,
     yamlConfig: this.yamlConfig,
     thumbnail: this.thumbnail,
-    loadingText: 'Link Volumes',
+    loadingText: '',
     visualization: null,
     project: {},
   }
@@ -536,28 +531,35 @@ class MyComponent extends Vue {
   }
 
   private async processGeojsonFile(files: { geojsonFile: any }) {
-    this.myState.loadingText = 'Loading network...'
+    this.myState.loadingText = 'Verkehrsnetz laden...'
 
-    const xtext = pako.inflate(files.geojsonFile, { to: 'string' })
-    const geojson = JSON.parse(xtext) // await parseAsync(xtext) //
+    let text = pako.inflate(files.geojsonFile, { to: 'string' })
 
+    // console.log({ text })
+
+    // const stext: any = '{"type":"FeatureCollection","features":[1,2,3,4,5]}'
+    // console.log({ stext })
+
+    const geojson = JSON.parse(text) // await parseAsync(text) //
     const idPropertyName = this.vizDetails.shpFileIdProperty
       ? this.vizDetails.shpFileIdProperty
       : 'Id'
 
     let id = 0
-    for (const feature of geojson.features) {
-      // Save ID somewhere more helpful
+
+    // Save ID somewhere more helpful
+    await forEachAsync(geojson.features, (feature: any) => {
       if (feature.properties) {
         feature.id = id++
         this.idLookup[feature.properties[idPropertyName]] = feature.id
       }
-    }
+    })
+
     return geojson
   }
 
   private async processShapefile(files: any) {
-    this.myState.loadingText = 'Loading shapefile...'
+    this.myState.loadingText = 'Verkehrsnetz laden...'
     const geojson = await shapefile.read(files.shpFile, files.dbfFile)
 
     this.myState.loadingText = 'Converting coordinates...'
@@ -573,7 +575,8 @@ class MyComponent extends Vue {
       : 'Id'
 
     let id = 0
-    for (const feature of geojson.features) {
+
+    await forEachAsync(geojson.features, (feature: any) => {
       // Save ID somewhere more helpful
       if (feature.properties) {
         feature.id = id++
@@ -595,7 +598,7 @@ class MyComponent extends Vue {
           console.error(e)
         }
       }
-    }
+    })
     return geojson
   }
 
@@ -666,7 +669,7 @@ class MyComponent extends Vue {
     const inputs = await this.loadFiles()
 
     if (!inputs) {
-      this.myState.loadingText = 'Problem loading files, sorry'
+      this.myState.loadingText = 'Fehler mit Dateien, sorry'
       return
     }
 
@@ -676,9 +679,10 @@ class MyComponent extends Vue {
 
     this.setMapExtent()
 
-    this.processCSVFiles(inputs)
+    await this.processCSVFiles(inputs)
     this.processHeaders(inputs.linkFlows)
-    this.calculateLinkProperties(this.geojson)
+
+    await this.calculateLinkProperties(this.geojson)
 
     this.addJsonToMap(this.geojson)
     this.changedScale(1)
@@ -692,7 +696,7 @@ class MyComponent extends Vue {
 
   private dailyGrandTotal = 0
 
-  private processCSVFiles(inputs: { linkFlows: string; linkBaseFlows: string }) {
+  private async processCSVFiles(inputs: { linkFlows: string; linkBaseFlows: string }) {
     this.dataset = {}
 
     // determine delimiter
@@ -719,23 +723,22 @@ class MyComponent extends Vue {
     const key = content.meta.fields[0]
     this.idColumn = key
 
-    for (const row of content.data) {
-      // mapbox requires numerical IDs
-
+    // mapbox requires numerical IDs
+    await forEachAsync(content.data, (row: any) => {
       //@ts-ignore
       const originalId = row[key] as any
       const numericalId = this.idLookup[originalId]
       this.dataset[numericalId] = row
-    }
+    })
 
     // SUBTRACT BASE!
     if (inputs.linkBaseFlows) {
-      this.subtractBaseFlows(inputs.linkBaseFlows, delimiter)
+      await this.subtractBaseFlows(inputs.linkBaseFlows, delimiter)
     }
   }
 
-  private subtractBaseFlows(baseFlows: string, delimiter: string) {
-    // convert CSV
+  private async subtractBaseFlows(baseFlows: string, delimiter: string) {
+    this.myState.loadingText = 'Differenzen berechnen...'
     const content = Papaparse.parse(baseFlows, {
       header: true,
       dynamicTyping: true,
@@ -749,9 +752,7 @@ class MyComponent extends Vue {
 
     let numDiffs = 0
 
-    for (const row of content.data) {
-      // mapbox requires numerical IDs
-
+    await forEachAsync(content.data, (row: any) => {
       const originalId = row[key]
       const numericalId = this.idLookup[originalId]
 
@@ -768,18 +769,19 @@ class MyComponent extends Vue {
         }
         this.dataset[numericalId] = row
       }
-    }
+    })
 
     console.log(numDiffs, 'total DIFFs happened')
-    // console.log({ dataset: this.dataset })
   }
 
   private dailyTotals: any[] = []
 
   private idColumn = ''
 
-  private calculateLinkProperties(json: any) {
-    for (const link of json.features) {
+  private async calculateLinkProperties(json: any) {
+    this.myState.loadingText = 'Berechnen...'
+
+    await forEachAsync(json.features, (link: any) => {
       const id = link.id
 
       const values = this.dataset[id]
@@ -801,7 +803,7 @@ class MyComponent extends Vue {
         }
         link.properties[this.TOTAL_MSG] = daily
       }
-    }
+    })
   }
 
   private addJsonToMap(json: any) {
