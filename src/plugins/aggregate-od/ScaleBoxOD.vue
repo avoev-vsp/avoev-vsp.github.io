@@ -2,7 +2,7 @@
 #scale-container
   p.title Linienbreite:
     .scale-element {{ "|↔︎|" }}
-    .scale-scale {{ "~ " + this.rows[0] + " trips" }}
+    .scale-scale {{ "~ " + this.rows[0] + " Fahrten" }}
 
 </template>
 
