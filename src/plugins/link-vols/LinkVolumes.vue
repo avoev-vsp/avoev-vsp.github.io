@@ -45,8 +45,8 @@
 import * as shapefile from 'shapefile'
 import { debounce } from 'debounce'
 import { FeatureCollection, Feature } from 'geojson'
-import { forEachAsync } from 'js-coroutines'
-import mapboxgl, { LngLat, MapMouseEvent, PositionOptions, MapLayerMouseEvent } from 'mapbox-gl'
+import * as coroutines from 'js-coroutines'
+import mapboxgl, { LngLat, MapMouseEvent, MapLayerMouseEvent } from 'mapbox-gl'
 import nprogress from 'nprogress'
 import Papaparse from 'papaparse'
 import pako from 'pako'
@@ -73,6 +73,7 @@ interface VolumePlotYaml {
   dbfFile: string
   csvFile: string
   csvFile2?: string
+  sum?: boolean
   geojsonFile?: string
   projection: string
   scaleFactor?: number
@@ -142,6 +143,7 @@ class MyComponent extends Vue {
     title: '',
     description: '',
     thumbnail: '',
+    sum: false,
   }
 
   @Watch('showAllRoads') toggleShowAllRoads() {
@@ -548,7 +550,7 @@ class MyComponent extends Vue {
     let id = 0
 
     // Save ID somewhere more helpful
-    await forEachAsync(geojson.features, (feature: any) => {
+    await coroutines.forEachAsync(geojson.features, (feature: any) => {
       if (feature.properties) {
         feature.id = id++
         this.idLookup[feature.properties[idPropertyName]] = feature.id
@@ -576,7 +578,7 @@ class MyComponent extends Vue {
 
     let id = 0
 
-    await forEachAsync(geojson.features, (feature: any) => {
+    await coroutines.forEachAsync(geojson.features, (feature: any) => {
       // Save ID somewhere more helpful
       if (feature.properties) {
         feature.id = id++
@@ -724,7 +726,7 @@ class MyComponent extends Vue {
     this.idColumn = key
 
     // mapbox requires numerical IDs
-    await forEachAsync(content.data, (row: any) => {
+    await coroutines.forEachAsync(content.data, (row: any) => {
       //@ts-ignore
       const originalId = row[key] as any
       const numericalId = this.idLookup[originalId]
@@ -738,7 +740,10 @@ class MyComponent extends Vue {
   }
 
   private async subtractBaseFlows(baseFlows: string, delimiter: string) {
-    this.myState.loadingText = 'Differenzen berechnen...'
+    this.myState.loadingText = this.vizDetails.sum
+      ? 'Summen berechnen...'
+      : 'Differenzen berechnen...'
+
     const content = Papaparse.parse(baseFlows, {
       header: true,
       dynamicTyping: true,
@@ -752,20 +757,26 @@ class MyComponent extends Vue {
 
     let numDiffs = 0
 
-    await forEachAsync(content.data, (row: any) => {
+    await coroutines.forEachAsync(content.data, (row: any) => {
       const originalId = row[key]
       const numericalId = this.idLookup[originalId]
 
       if (this.dataset[numericalId]) {
         // if exists in dataset, subtract
         const altRow = this.dataset[numericalId]
-        for (const z of Object.keys(row)) altRow[z] = altRow[z] - row[z]
+        if (this.vizDetails.sum) {
+          for (const z of Object.keys(row)) altRow[z] = altRow[z] + row[z]
+        } else {
+          for (const z of Object.keys(row)) altRow[z] = altRow[z] - row[z]
+        }
         this.dataset[numericalId] = altRow
         numDiffs++
       } else {
-        // otherwise negate all values
-        for (const z of Object.keys(row)) {
-          if (!isNaN(row[z])) row[z] = -1 * row[z]
+        // negate all values for diff if only base is available
+        if (!this.vizDetails.sum) {
+          for (const z of Object.keys(row)) {
+            if (!isNaN(row[z])) row[z] = -1 * row[z]
+          }
         }
         this.dataset[numericalId] = row
       }
@@ -781,7 +792,7 @@ class MyComponent extends Vue {
   private async calculateLinkProperties(json: any) {
     this.myState.loadingText = 'Berechnen...'
 
-    await forEachAsync(json.features, (link: any) => {
+    await coroutines.forEachAsync(json.features, (link: any) => {
       const id = link.id
 
       const values = this.dataset[id]
