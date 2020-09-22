@@ -1,11 +1,10 @@
 <template lang="pug">
 #home
-  .banner
-    h2 VSP / Technische Universität Berlin
-    h3 AVÖV Projekt Portal
-
   .page-area
-    colophon.colophon
+    .banner
+      h2 VSP / Technische Universität Berlin
+      h3 AVÖV Projekt Portal
+
     .content
       .main
         img(src="/logo-avoev.png" height=120)
@@ -16,19 +15,7 @@
 
         h2 Weitere Informationen
         .readme(v-html="readmeBottom")
-
-        //- .footer(v-if="!state.isFullScreen")
-        //-   .logos
-        //-     .logo
-        //-       a(href="https://vsp.tu-berlin.de")
-        //-         img(alt="TU-Berlin logo" src="@/assets/images/vsp-logo.png" width=225)
-        //-     .logo
-        //-       a(href="https://matsim.org")
-        //-         img(alt="MATSim logo" src="@/assets/images/matsim-logo-blue.png" width=250)
-        //-     .logo
-        //-       a(href="https://bmvi.de")
-        //-         img(alt="BMVI" src="/logo-bmvi.png" width=300)
-
+  colophon.colophon
 
 </template>
 
@@ -61,6 +48,8 @@ export default MyComponent
 @import '@/styles.scss';
 
 #home {
+  display: flex;
+  flex-direction: row;
   background-color: $paleBackground;
 }
 
@@ -163,8 +152,9 @@ a {
 }
 
 .page-area {
+  flex: 1;
   display: flex;
-  flex-direction: row-reverse;
+  flex-direction: column;
 }
 
 .headline {
