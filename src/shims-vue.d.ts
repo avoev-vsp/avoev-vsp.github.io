@@ -27,3 +27,4 @@ declare module 'zip-loader'
 // temp i hope
 declare module '@turf/point-to-line-distance'
 declare module '@turf/nearest-point-to-line'
+declare module '@aftersim/pako'

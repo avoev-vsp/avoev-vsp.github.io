@@ -2,7 +2,7 @@ import AsyncBackgroundWorker, { MethodCall, MethodResult } from '@/util/AsyncBac
 import { InitParams, MethodNames } from './XmlFetcherContract'
 
 import readBlob from 'read-blob'
-import pako from 'pako'
+import pako from '@aftersim/pako'
 import xml2js from 'xml2js'
 
 import globalStore from '@/store'

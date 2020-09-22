@@ -49,7 +49,6 @@ import * as coroutines from 'js-coroutines'
 import mapboxgl, { LngLat, MapMouseEvent, MapLayerMouseEvent } from 'mapbox-gl'
 import nprogress from 'nprogress'
 import Papaparse from 'papaparse'
-import pako from 'pako'
 import proj4 from 'proj4'
 import readBlob from 'read-blob'
 import { blobToArrayBuffer, blobToBinaryString } from 'blob-util'
@@ -58,6 +57,7 @@ import VueSlider from 'vue-slider-component'
 import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
 import yaml from 'yaml'
 
+import pako from '@aftersim/pako'
 import Coords from '@/util/Coords'
 import LeftDataPanel from '@/components/LeftDataPanel.vue'
 import ScaleSlider from '@/components/ScaleSlider.vue'
@@ -127,7 +127,7 @@ class MyComponent extends Vue {
     subfolder: this.subfolder,
     yamlConfig: this.yamlConfig,
     thumbnail: this.thumbnail,
-    loadingText: '',
+    loadingText: 'Dateien laden...',
     visualization: null,
     project: {},
   }
@@ -535,14 +535,10 @@ class MyComponent extends Vue {
   private async processGeojsonFile(files: { geojsonFile: any }) {
     this.myState.loadingText = 'Verkehrsnetz laden...'
 
-    let text = pako.inflate(files.geojsonFile, { to: 'string' })
-
-    // console.log({ text })
-
-    // const stext: any = '{"type":"FeatureCollection","features":[1,2,3,4,5]}'
-    // console.log({ stext })
+    let text = await coroutines.run(pako.inflateAsync(files.geojsonFile, { to: 'string' }))
 
     const geojson = JSON.parse(text) // await parseAsync(text) //
+
     const idPropertyName = this.vizDetails.shpFileIdProperty
       ? this.vizDetails.shpFileIdProperty
       : 'Id'
