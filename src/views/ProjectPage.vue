@@ -335,30 +335,47 @@ export default class VueComponent extends Vue {
     this.myState.folders = []
     this.myState.files = []
 
+    let runs: any[] = []
+
+    // use runs.yml if it exists
     try {
       const y = await this.myState.svnRoot.getFileText('runs.yml')
-
-      const runs = yaml.parse(y)
-
-      this.projectYaml = []
-      for (const run of runs) {
-        const folder = run.folder
-        const path = `${this.myState.svnRoot}/`
-        try {
-          const metadata = await this.myState.svnRoot.getFileText(`${folder}/metadata.yml`)
-          const details: any = yaml.parse(metadata)
-
-          details.folder = folder
-          this.projectYaml.push(details)
-        } catch (e) {
-          console.error('no metadata for', folder)
-        }
-      }
+      runs = yaml.parse(y)
     } catch (e) {
-      // Bad things happened! Tell user
-      console.log('BAD PAGE')
-      console.error(e)
+      // but if it doesn't get the list of folders instead
+      console.log('here')
+      const contents = await this.myState.svnRoot.getDirectory('')
+      console.log({ contents })
+
+      if (contents.dirs.length) {
+        runs = contents.dirs.map(dir => {
+          return {
+            folder: dir,
+          }
+        })
+      }
     }
+
+    console.log({ runs })
+
+    const runDetails: any = []
+
+    for (const run of runs) {
+      const folder = run.folder
+      const path = `${this.myState.svnRoot}/`
+      try {
+        const metadata = await this.myState.svnRoot.getFileText(`${folder}/metadata.yml`)
+        const details: any = yaml.parse(metadata)
+
+        details.folder = folder
+        runDetails.push(details)
+      } catch (e) {
+        console.warn('no metadata for', folder)
+        runDetails.push({ title: folder, folder, notes: [] })
+      }
+    }
+    this.projectYaml = runDetails
+    console.log({ projectYaml: this.projectYaml })
   }
 
   private async fetchFolderContents() {

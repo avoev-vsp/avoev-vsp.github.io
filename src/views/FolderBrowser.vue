@@ -2,7 +2,7 @@
 #project-component
   .project-bar(v-if="myState.svnProject")
     .details
-      h2 {{ globalState.breadcrumbs[globalState.breadcrumbs.length -1].label }}
+      h2(v-if="globalState.breadcrumbs.length") {{ globalState.breadcrumbs[globalState.breadcrumbs.length -1].label }}
       p {{ myState.svnProject.description }}
     .logo
         img(height=160 src="/logo-avoev.png")
@@ -345,6 +345,7 @@ export default class VueComponent extends Vue {
 
     try {
       const folderContents = await this.myState.svnRoot.getDirectory(this.myState.subfolder)
+      console.log(folderContents)
       // hide dot folders
       const folders = folderContents.dirs.filter(f => !f.startsWith('.')).sort()
       const files = folderContents.files.filter(f => !f.startsWith('.')).sort()
@@ -370,7 +371,7 @@ export default class VueComponent extends Vue {
       if (this.myState.errorStatus === '<h3>Error</h3>') this.myState.errorStatus = '' + e
 
       if (this.myState.svnProject) {
-        this.myState.errorStatus += `<p><i>${this.myState.svnProject.svn}${this.myState.subfolder}</i></p>`
+        this.myState.errorStatus += `<p><i>${this.myState.svnProject.svn}/${this.myState.subfolder}</i></p>`
       }
 
       // maybe it failed because password?

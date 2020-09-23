@@ -1,5 +1,5 @@
 // import plugins in the order you want them to appear on project pages
-import TripViewer from '@/plugins/trip-viewer/TripViewerPlugin.vue'
+import VehicleAnimation from '@/plugins/vehicle-animation/VehicleAnimation.vue'
 import AgentAnimation from '@/plugins/agent-animation/AgentAnimation.vue'
 import LinkVolumes from '@/plugins/link-vols/LinkVolumes.vue'
 import SankeyDiagram from '@/plugins/sankey/SankeyDiagram.vue'
@@ -11,7 +11,7 @@ import ImageView from '@/plugins/image/ImageView.vue'
 
 // EVERY plugin must be registered here:
 const plugins = {
-  TripViewer,
+  VehicleAnimation,
   AgentAnimation,
   LinkVolumes,
   SankeyDiagram,

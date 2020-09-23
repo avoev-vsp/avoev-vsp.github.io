@@ -49,14 +49,14 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop, Watch } from 'vue-property-decorator'
+import { Component, Prop, Watch } from 'vue-property-decorator'
 import Papaparse from 'papaparse'
 import VueSlider from 'vue-slider-component'
 import { ToggleButton } from 'vue-js-toggle-button'
 import readBlob from 'read-blob'
-import yaml from 'yaml'
-
-import TripLayer from '@/plugins/trip-viewer/triplayer'
+import { Route } from 'vue-router'
+import YAML from 'yaml'
+import vuera from 'vuera'
 
 import globalStore from '@/store'
 import AnimationView from '@/plugins/agent-animation/AnimationView.vue'
@@ -70,20 +70,23 @@ import {
   LIGHT_MODE,
   DARK_MODE,
 } from '@/Globals'
-import { Route } from 'vue-router'
+
+import TripLayer from '@/plugins/vehicle-animation/tripLayer'
 import HTTPFileSystem from '@/util/HTTPFileSystem'
 
-@Component({
-  components: {
-    // AnimationView,
-    // ModalMarkdownDialog,
-    // PlaybackControls,
-    // VueSlider,
-    // ToggleButton,
-    TripLayer,
-  },
-})
-class TripViewer extends Vue {
+// AnimationView,
+// ModalMarkdownDialog,
+// PlaybackControls,
+// VueSlider,
+// ToggleButton,
+
+import Vue from 'vue'
+import { VuePlugin } from 'vuera'
+
+Vue.use(VuePlugin)
+
+@Component({ components: { TripLayer } as any })
+class VehicleAnimation extends Vue {
   @Prop({ required: false })
   private fileApi!: FileSystem
 
@@ -198,7 +201,7 @@ class TripViewer extends Vue {
       const text = await this.myState.fileApi.getFileText(
         this.myState.subfolder + '/' + this.myState.yamlConfig
       )
-      this.vizDetails = yaml.parse(text)
+      this.vizDetails = YAML.parse(text)
     } catch (e) {
       console.log('failed')
       // maybe it failed because password?
@@ -342,14 +345,14 @@ class TripViewer extends Vue {
 
 // !register plugin!
 globalStore.commit('registerPlugin', {
-  kebabName: 'trip-viewer',
+  kebabName: 'deckgl-vehicles',
   prettyName: 'Trip Viewer',
-  description: 'Trip Animation',
-  filePatterns: ['viz-trips*.y?(a)ml'],
-  component: TripViewer,
+  description: 'Deck.gl based trip viewer',
+  filePatterns: ['viz-vehicles*.y?(a)ml'],
+  component: VehicleAnimation,
 } as VisualizationPlugin)
 
-export default TripViewer
+export default VehicleAnimation
 </script>
 
 <style scoped lang="scss">
