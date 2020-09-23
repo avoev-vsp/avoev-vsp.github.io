@@ -23,7 +23,7 @@
     .curate-content(v-if="projectYaml.length")
       hr
       h3 Ergebnisse
-      p Die folgenden Links führen zu den Ergebnissen verschiedener Simulationsexperimente für die Stadt Gladbeck und Umgebung.
+      p Die folgenden Links führen zu den Ergebnissen verschiedener Simulationsexperimente.
 
       .viz-table
         .folder(:class="{fade: myState.isLoading}"
