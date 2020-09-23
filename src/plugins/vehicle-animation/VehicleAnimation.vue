@@ -2,24 +2,13 @@
 #v3-app(:class="{'hide-thumbnail': !thumbnail}"
         :style='{"background": urlThumbnail}')
 
-  //- animation-view.anim(v-if="!thumbnail && vizDetails.network"
-  //-   @loaded="toggleLoaded" :vizState="myState" :speed="speed"
-  //-   :fileApi="fileApi" :subfolder="subfolder" :yamlConfig="yamlConfig" :vizDetails="vizDetails")
-
-  trip-layer.anim(v-if="!thumbnail")
-
-  //- modal-markdown-dialog#help-dialog(v-if="!thumbnail"
-  //-   title='DRT Vehicles'
-  //-   md='@/assets/animation-helptext.md'
-  //-   :buttons="[`OK`]"
-  //-   :class="{'is-active': showHelp}"
-  //-   @click="clickedCloseHelp()"
-  //- )
+  trip-layer.anim(v-if="!thumbnail" :simulationTime="simulationTime")
 
   .nav(v-if="!thumbnail")
     p.big.day {{ vizDetails.title }}
     p.big.time(v-if="myState.statusMessage") {{ myState.statusMessage }}
-    p.big.time(v-else) {{ myState.clock }}
+    .big.time.clock(v-else)
+      p {{ myState.clock }}
 
   .right-side
     .morestuff(v-if="isLoaded")
@@ -34,7 +23,13 @@
       p.speed-label(
         :style="{'color': textColor.text}") {{ speed }}x speed
 
-  playback-controls.playback-stuff(v-if="isLoaded" @click='toggleSimulation')
+  playback-controls.playback-stuff(v-if="isLoaded"
+    @click='toggleSimulation'
+    @time='setTime'
+    :timeStart = "timeStart"
+    :timeEnd = "timeEnd"
+    :isRunning = "myState.isRunning"
+    :currentTime = "simulationTime")
 
   .extra-buttons(v-if="isLoaded")
     .help-button(@click='clickedHelp' title="info")
@@ -57,11 +52,10 @@ import readBlob from 'read-blob'
 import { Route } from 'vue-router'
 import YAML from 'yaml'
 import vuera from 'vuera'
-
 import globalStore from '@/store'
 import AnimationView from '@/plugins/agent-animation/AnimationView.vue'
 import ModalMarkdownDialog from '@/components/ModalMarkdownDialog.vue'
-import PlaybackControls from '@/components/PlaybackControls.vue'
+import PlaybackControls from './PlaybackControls.vue'
 import {
   FileSystem,
   SVNProject,
@@ -85,7 +79,7 @@ import { VuePlugin } from 'vuera'
 
 Vue.use(VuePlugin)
 
-@Component({ components: { TripLayer } as any })
+@Component({ components: { TripLayer, VueSlider, PlaybackControls, ToggleButton } as any })
 class VehicleAnimation extends Vue {
   @Prop({ required: false })
   private fileApi!: FileSystem
@@ -121,9 +115,14 @@ class VehicleAnimation extends Vue {
     thumbnail: this.thumbnail,
   }
 
+  private timeStart = 0
+  private timeEnd = 86400
+
+  private simulationTime = 5 * 3600
+
   private globalState = globalStore.state
   private isDarkMode = this.myState.colorScheme === ColorScheme.DarkMode
-  private isLoaded = false
+  private isLoaded = true
   private showHelp = false
 
   private speedStops = [-10, -5, -2, -1, -0.5, -0.25, 0, 0.25, 0.5, 1, 2, 5, 10]
@@ -283,6 +282,16 @@ class VehicleAnimation extends Vue {
     return this.myState.colorScheme === ColorScheme.DarkMode ? darkmode : lightmode
   }
 
+  private setWallClock() {
+    const hour = Math.floor(this.simulationTime / 3600)
+    const minute = Math.floor(this.simulationTime / 60) % 60
+    this.myState.clock = (hour < 10 ? '0' : '') + hour + (minute < 10 ? ':0' : ':') + minute
+  }
+
+  private setTime(seconds: number) {
+    this.simulationTime = seconds
+    this.setWallClock()
+  }
   private toggleSimulation() {
     this.myState.isRunning = !this.myState.isRunning
 
@@ -296,17 +305,24 @@ class VehicleAnimation extends Vue {
     globalStore.commit('setFullScreen', !this.thumbnail)
 
     if (!this.yamlConfig) this.buildRouteFromUrl()
-
     await this.getVizDetails()
 
     if (this.thumbnail) return
 
-    this.generateBreadcrumbs()
-
     this.showHelp = false
-
-    // make nice colors
+    this.generateBreadcrumbs()
     this.updateLegendColors()
+
+    this.myState.isRunning = true
+    this.animate()
+  }
+
+  private animate() {
+    if (this.myState.isRunning) {
+      this.simulationTime += this.speed * 5.0
+      this.setWallClock()
+    }
+    window.requestAnimationFrame(this.animate)
   }
 
   private beforeDestroy() {
@@ -414,7 +430,6 @@ img.theme-button:hover {
   flex-direction: row;
   margin: 0 0;
   padding: 0 0.5rem 0 1rem;
-  background-color: #228855dd;
 
   a {
     font-weight: bold;
@@ -489,12 +504,12 @@ img.theme-button:hover {
 
 .left-side {
   flex: 1;
-  background-color: green;
   margin-left: 0.5rem;
   margin-right: auto;
 }
 
 .right-side {
+  z-index: 10;
   grid-area: rightside;
   font-size: 0.8rem;
   display: flex;
@@ -590,18 +605,21 @@ img.theme-button:hover {
 }
 
 .playback-stuff {
+  z-index: 10;
   grid-area: playback;
   padding: 0rem 1rem 1rem 2rem;
   pointer-events: auto;
 }
 
 .extra-buttons {
+  z-index: 10;
   margin-left: auto;
   margin-right: 1rem;
   grid-area: extrabuttons;
 }
 
 .anim {
+  z-index: 0;
   grid-column: 1 / 3;
   grid-row: 1 / 7;
   pointer-events: auto;
@@ -632,6 +650,17 @@ img.theme-button:hover {
   height: 1.8rem;
   padding-top: 0.2rem;
   font-size: 1rem;
+}
+
+.clock {
+  background-color: #00000080;
+  margin-right: 0.25rem;
+  border: 3px solid white;
+}
+
+.clock p {
+  margin-left: 0.5rem;
+  padding: 5px 10px;
 }
 
 @media only screen and (max-width: 640px) {

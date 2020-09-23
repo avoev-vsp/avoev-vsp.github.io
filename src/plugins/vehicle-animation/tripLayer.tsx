@@ -29,35 +29,12 @@ const pointLight = new PointLight({
 
 const lightingEffect = new LightingEffect({ ambientLight, pointLight })
 
-const material = {
-  ambient: 0.1,
-  diffuse: 0.6,
-  shininess: 32,
-  specularColor: [60, 64, 70],
-}
-
 const DEFAULT_THEME = {
   buildingColor: [74, 80, 87],
   trailColor0: [255, 255, 25],
   trailColor1: [23, 184, 190],
-  material,
   effects: [lightingEffect],
 }
-
-export const COLOR_SCALE = scaleThreshold()
-  .domain([0, 4, 8, 12, 20, 32, 52, 84, 136, 220])
-  .range([
-    [26, 152, 80],
-    [50, 120, 120],
-    [166, 217, 106],
-    [217, 239, 139],
-    [255, 255, 191],
-    [254, 224, 139],
-    [253, 174, 97],
-    [244, 109, 67],
-    [215, 48, 39],
-    [168, 0, 0] as any,
-  ])
 
 const INITIAL_VIEW_STATE = {
   latitude: 51.55,
@@ -67,29 +44,15 @@ const INITIAL_VIEW_STATE = {
   maxZoom: 20,
 }
 
-export default function App({
-  mapStyle = 'mapbox://styles/vsp-tu-berlin/ckek59op0011219pbwfar1rex',
+export default function App(props: any) {
+  const mapStyle = 'mapbox://styles/vsp-tu-berlin/ckek59op0011219pbwfar1rex'
   // mapStyle = 'mapbox://styles/vsp-tu-berlin/ckeetelh218ef19ob5nzw5vbh',
   // mapStyle = "mapbox://styles/mapbox/dark-v10",
-  trips = DATA_URL.TRIPS,
-  trailLength = 80,
-  theme = DEFAULT_THEME,
-  loopLength = 86400, // unit corresponds to the timestamp in source data
-  animationSpeed = 2,
-}) {
-  const [time, setTime] = useState(24000)
-  const [animation] = useState({}) as any
+  const trips = DATA_URL.TRIPS
+  const trailLength = 80
+  const theme = DEFAULT_THEME
+
   const [hoverInfo, setHoverInfo] = useState({})
-
-  const animate = () => {
-    setTime(t => (t + animationSpeed) % loopLength)
-    animation.id = window.requestAnimationFrame(animate)
-  }
-
-  useEffect(() => {
-    animation.id = window.requestAnimationFrame(animate)
-    return () => window.cancelAnimationFrame(animation.id)
-  }, [animation])
 
   const layers = [
     new TripsLayer({
@@ -105,7 +68,7 @@ export default function App({
       widthMinPixels: 5,
       rounded: true,
       trailLength,
-      currentTime: time,
+      currentTime: props.simulationTime,
       shadowEnabled: false,
     }),
   ]
