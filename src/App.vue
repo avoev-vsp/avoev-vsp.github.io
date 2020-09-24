@@ -93,6 +93,10 @@ html {
   overscroll-behavior: contain;
 }
 
+html {
+  overflow-y: auto;
+}
+
 canvas {
   display: block;
 }
