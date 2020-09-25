@@ -1,8 +1,6 @@
 <template lang="pug">
 #v3-app(:class="{'hide-thumbnail': !thumbnail}"
-        :style='{"background": urlThumbnail}')
-
-  trip-layer.anim(v-if="!thumbnail" :simulationTime="simulationTime")
+        :style='{"background": urlThumbnail}' oncontextmenu="return false")
 
   .nav(v-if="!thumbnail")
     p.big.day {{ vizDetails.title }}
@@ -31,10 +29,12 @@
     :isRunning = "myState.isRunning"
     :currentTime = "simulationTime")
 
-  .extra-buttons(v-if="isLoaded")
-    .help-button(@click='clickedHelp' title="info")
-      i.help-button-text.fa.fa-1x.fa-question
-    img.theme-button(src="@/assets/images/darkmode.jpg" @click='rotateColors' title="dark/light theme")
+  //- .extra-buttons(v-if="isLoaded")
+  //-   .help-button(@click='clickedHelp' title="info")
+  //-     i.help-button-text.fa.fa-1x.fa-question
+  //-   img.theme-button(src="@/assets/images/darkmode.jpg" @click='rotateColors' title="dark/light theme")
+
+  trip-layer.anim(v-if="!thumbnail" :simulationTime="simulationTime")
 
   //- .legend(:class="{dark: isDarkMode}")
   //-   p(:style="{color: isDarkMode ? '#fff' : '#000'}") Legend:
@@ -65,7 +65,7 @@ import {
   DARK_MODE,
 } from '@/Globals'
 
-import TripLayer from '@/plugins/vehicle-animation/tripLayer'
+import TripLayer from '@/plugins/vehicle-animation/TripViz'
 import HTTPFileSystem from '@/util/HTTPFileSystem'
 
 // AnimationView,
@@ -217,7 +217,6 @@ class VehicleAnimation extends Vue {
   }
 
   private async buildThumbnail() {
-    // thumbnail
     if (this.thumbnail && this.vizDetails.thumbnail) {
       try {
         const blob = await this.myState.fileApi.getFileBlob(
@@ -319,7 +318,7 @@ class VehicleAnimation extends Vue {
 
   private animate() {
     if (this.myState.isRunning) {
-      this.simulationTime += this.speed * 5.0
+      this.simulationTime += this.speed * 4.0
       this.setWallClock()
     }
     window.requestAnimationFrame(this.animate)
@@ -361,7 +360,7 @@ class VehicleAnimation extends Vue {
 
 // !register plugin!
 globalStore.commit('registerPlugin', {
-  kebabName: 'deckgl-vehicles',
+  kebabName: 'vehicle-animation',
   prettyName: 'Trip Viewer',
   description: 'Deck.gl based trip viewer',
   filePatterns: ['viz-vehicles*.y?(a)ml'],
@@ -399,7 +398,7 @@ export default VehicleAnimation
 #help-dialog {
   padding: 2rem 2rem;
   pointer-events: auto;
-  z-index: 20;
+  // z-index: 20;
 }
 
 img.theme-button {
@@ -509,7 +508,7 @@ img.theme-button:hover {
 }
 
 .right-side {
-  z-index: 10;
+  // z-index: 10;
   grid-area: rightside;
   font-size: 0.8rem;
   display: flex;
@@ -605,21 +604,21 @@ img.theme-button:hover {
 }
 
 .playback-stuff {
-  z-index: 10;
+  margin-bottom: 1rem;
   grid-area: playback;
   padding: 0rem 1rem 1rem 2rem;
   pointer-events: auto;
 }
 
 .extra-buttons {
-  z-index: 10;
   margin-left: auto;
   margin-right: 1rem;
   grid-area: extrabuttons;
 }
 
 .anim {
-  z-index: 0;
+  background-color: #181919;
+  z-index: -1;
   grid-column: 1 / 3;
   grid-row: 1 / 7;
   pointer-events: auto;

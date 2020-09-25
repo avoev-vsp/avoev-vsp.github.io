@@ -1232,7 +1232,7 @@
     "@math.gl/web-mercator" "^3.2.0"
     "@probe.gl/stats" "^3.3.0"
 
-"@luma.gl/constants@8.2.0":
+"@luma.gl/constants@8.2.0", "@luma.gl/constants@^8.2.0":
   version "8.2.0"
   resolved "https://registry.yarnpkg.com/@luma.gl/constants/-/constants-8.2.0.tgz#0789c629edbb8b69b7f810ae10c91501b97c634b"
   integrity sha512-ah2PbzTlSGjRIq0YQQcTDAbGdgiRhtE41tvVQGF3BDtARrBuS+ElsPsJbB7sm+wvfjm1mkoLawozrF89pgyY9A==
@@ -1378,7 +1378,7 @@
     "@math.gl/core" "3.2.2"
     gl-matrix "^3.0.0"
 
-"@math.gl/polygon@^3.2.1":
+"@math.gl/polygon@^3.2.1", "@math.gl/polygon@^3.2.2":
   version "3.2.2"
   resolved "https://registry.yarnpkg.com/@math.gl/polygon/-/polygon-3.2.2.tgz#9233879f1b24a48820e68fd377f30bc5eb6536b7"
   integrity sha512-Bj/KDmhvF2joP1KxHo4/QQvILOp/bUauFlsm4E53PCdVMdDi26AOK8BQSQrfY3ZiMMfBYXbWijBrAnKdbi6jFQ==

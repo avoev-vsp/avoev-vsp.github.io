@@ -16,6 +16,8 @@
     "@deck.gl/layers": "^8.2.7",
     "@deck.gl/mesh-layers": "^8.2.7",
     "@deck.gl/react": "^8.2.7",
+    "@luma.gl/constants": "^8.2.0",
+    "@math.gl/polygon": "^3.2.2",
     "@statnett/vue-plotly": "^0.3.2",
     "@turf/turf": "^5.1.6",
     "blob-util": "^2.0.2",
