@@ -35,7 +35,7 @@
   //-   img.theme-button(src="@/assets/images/darkmode.jpg" @click='rotateColors' title="dark/light theme")
 
   trip-viz.anim(v-if="!thumbnail" :simulationTime="simulationTime"
-                :json="myState.data")
+                :json="$options.myJson")
 
   //- .legend(:class="{dark: isDarkMode}")
   //-   p(:style="{color: isDarkMode ? '#fff' : '#000'}") Legend:
@@ -314,7 +314,9 @@ class VehicleAnimation extends Vue {
     this.generateBreadcrumbs()
     this.updateLegendColors()
 
-    this.myState.data = await this.loadFiles()
+    //@ts-ignore:
+    this.$options.myJson = await this.loadFiles()
+    // this.myState.json = await this.loadFiles()
 
     this.myState.isRunning = true
     this.animate()
@@ -335,6 +337,8 @@ class VehicleAnimation extends Vue {
   }
 
   private async loadFiles() {
+    let json: any = []
+
     try {
       const json = await this.myState.fileApi.getFileJson(
         this.myState.subfolder + '/' + this.vizDetails.drtTrips
@@ -344,6 +348,7 @@ class VehicleAnimation extends Vue {
     } catch (e) {
       this.myState.statusMessage = '' + e
     }
+    return json
   }
 
   private clickedHelp() {

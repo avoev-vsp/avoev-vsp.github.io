@@ -49,6 +49,20 @@ vec3 interpolate(in vec3 point1, in vec3 point2, in float timestepFraction) {
 }
 
 void main(void) {
+
+  // Calculate progress
+  if (currentTime < instanceTimestamps) {
+    vPercentComplete = -1.0;
+  } else if (currentTime > instanceTimestampsNext) {
+    vPercentComplete = -1.0;
+  } else {
+    vPercentComplete = (currentTime - instanceTimestamps) /
+                       (instanceTimestampsNext - instanceTimestamps);
+  }
+
+  // skip everything else if this vertex is outside the time window
+  if (vPercentComplete == -1.0) return;
+
   // geometry.worldPosition = instancePositions;
   // geometry.uv = positions;
   geometry.pickingColor = instancePickingColors;
@@ -70,6 +84,7 @@ void main(void) {
   vec3 point1 = project_position_to_clipspace(instanceStartPositions, vec3(0.0), vec3(0.0)).xyz;
   vec3 point2 = project_position_to_clipspace(instanceEndPositions, vec3(0.0), vec3(0.0)).xyz;
   vec3 direction = normalize(point2 - point1);
+  // vec3 direction = normalize(instanceEndPositions - instanceStartPositions); //
   float angle = atan( direction.y / direction.x);
   if (direction.x < 0.0) angle = angle - PI;
 
@@ -78,16 +93,6 @@ void main(void) {
   pixelOffset = rotate_by_angle(pixelOffset, angle) * instanceScale;
   pixelOffset += instancePixelOffset;
   pixelOffset.y *= -1.0;
-
-  // Calculate progress
-  if (currentTime < instanceTimestamps) {
-    vPercentComplete = -1.0;
-  } else if (currentTime > instanceTimestampsNext) {
-    vPercentComplete = -1.0;
-  } else {
-    vPercentComplete = (currentTime - instanceTimestamps) /
-                       (instanceTimestampsNext - instanceTimestamps);
-  }
 
   vec3 newPosition = interpolate(
     instanceStartPositions,
