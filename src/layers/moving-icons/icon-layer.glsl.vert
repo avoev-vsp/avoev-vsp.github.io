@@ -67,7 +67,9 @@ void main(void) {
   float instanceScale = iconSize.y == 0.0 ? 0.0 : sizePixels / iconSize.y;
 
   // figure out angle
-  vec3 direction = normalize(instanceEndPositions - instanceStartPositions);
+  vec3 point1 = project_position_to_clipspace(instanceStartPositions, vec3(0.0), vec3(0.0)).xyz;
+  vec3 point2 = project_position_to_clipspace(instanceEndPositions, vec3(0.0), vec3(0.0)).xyz;
+  vec3 direction = normalize(point2 - point1);
   float angle = atan( direction.y / direction.x);
   if (direction.x < 0.0) angle = angle - PI;
 
@@ -83,8 +85,7 @@ void main(void) {
   } else if (currentTime > instanceTimestampsNext) {
     vPercentComplete = -1.0;
   } else {
-    vPercentComplete = (currentTime - instanceTimestamps)
-                        /
+    vPercentComplete = (currentTime - instanceTimestamps) /
                        (instanceTimestampsNext - instanceTimestamps);
   }
 
@@ -95,7 +96,6 @@ void main(void) {
 
   if (billboard)  {
     gl_Position = project_position_to_clipspace(newPosition, vec3(0.0), vec3(0.0));
-    // gl_Position = project_position_to_clipspace(instancePositions, instancePositions64Low, vec3(0.0), geometry.position);
     vec3 offset = vec3(pixelOffset, 0.0);
     DECKGL_FILTER_SIZE(offset, geometry);
     gl_Position.xy += project_pixel_size_to_clipspace(offset.xy);
@@ -103,9 +103,9 @@ void main(void) {
   } else {
     vec3 offset_common = vec3(project_pixel_size(pixelOffset), 0.0);
     DECKGL_FILTER_SIZE(offset_common, geometry);
-    gl_Position = project_position_to_clipspace(newPosition, vec3(0.0), vec3(0.0));
-    // gl_Position = project_position_to_clipspace(instancePositions, instancePositions64Low, offset_common, geometry.position);
+    gl_Position = project_position_to_clipspace(newPosition, offset_common, vec3(0.0));
   }
+
   DECKGL_FILTER_GL_POSITION(gl_Position, geometry);
 
   vTextureCoords = mix(
@@ -118,6 +118,4 @@ void main(void) {
   DECKGL_FILTER_COLOR(vColor, geometry);
 
   vColorMode = instanceColorModes;
-
-
 }

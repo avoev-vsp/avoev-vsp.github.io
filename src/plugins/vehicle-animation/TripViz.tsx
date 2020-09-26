@@ -49,11 +49,11 @@ const INITIAL_VIEW_STATE = {
   latitude: 51.55,
   longitude: 7,
   zoom: 11,
-  minZoom: 4,
-  maxZoom: 20,
+  minZoom: 2,
+  maxZoom: 22,
 }
 
-export default function App(props: any) {
+export default function Component(props: any) {
   const mapStyle = 'mapbox://styles/vsp-tu-berlin/ckek59op0011219pbwfar1rex'
   // const mapStyle = 'mapbox://styles/vsp-tu-berlin/ckeetelh218ef19ob5nzw5vbh'
   // mapStyle = "mapbox://styles/mapbox/dark-v10",
@@ -98,6 +98,7 @@ export default function App(props: any) {
       iconAtlas: '/icon-atlas.png',
       iconMapping: ICON_MAPPING,
       sizeScale: 1,
+      billboard: true,
       getColor: theme.trailColor0,
     }),
   ]
