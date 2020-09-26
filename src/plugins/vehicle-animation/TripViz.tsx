@@ -19,12 +19,6 @@ const MAPBOX_TOKEN =
   'pk.eyJ1IjoidnNwLXR1LWJlcmxpbiIsImEiOiJjamNpemh1bmEzNmF0MndudHI5aGFmeXpoIn0.u9f04rjFo7ZbWiSceTTXyA'
 // process.env.MapboxAccessToken // eslint-disable-line
 
-// Source data GeoJSON
-const DATA_URL = {
-  TRIPS: '/drt-latlon.json', // eslint-disable-line
-  ROADS: '/gladbeck.geo.json',
-}
-
 const ambientLight = new AmbientLight({
   color: [255, 255, 255],
   intensity: 1.0,
@@ -57,7 +51,8 @@ export default function Component(props: any) {
   const mapStyle = 'mapbox://styles/vsp-tu-berlin/ckek59op0011219pbwfar1rex'
   // const mapStyle = 'mapbox://styles/vsp-tu-berlin/ckeetelh218ef19ob5nzw5vbh'
   // mapStyle = "mapbox://styles/mapbox/dark-v10",
-  const trips = DATA_URL.TRIPS
+
+  const trips = props.json
   const trailLength = 75
   const theme = DEFAULT_THEME
 

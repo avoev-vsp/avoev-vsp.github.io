@@ -34,7 +34,8 @@
   //-     i.help-button-text.fa.fa-1x.fa-question
   //-   img.theme-button(src="@/assets/images/darkmode.jpg" @click='rotateColors' title="dark/light theme")
 
-  trip-viz.anim(v-if="!thumbnail" :simulationTime="simulationTime")
+  trip-viz.anim(v-if="!thumbnail" :simulationTime="simulationTime"
+                :json="myState.data")
 
   //- .legend(:class="{dark: isDarkMode}")
   //-   p(:style="{color: isDarkMode ? '#fff' : '#000'}") Legend:
@@ -113,6 +114,7 @@ class VehicleAnimation extends Vue {
     subfolder: this.subfolder,
     yamlConfig: this.yamlConfig,
     thumbnail: this.thumbnail,
+    data: [] as any[],
   }
 
   private timeStart = 0
@@ -312,6 +314,8 @@ class VehicleAnimation extends Vue {
     this.generateBreadcrumbs()
     this.updateLegendColors()
 
+    this.myState.data = await this.loadFiles()
+
     this.myState.isRunning = true
     this.animate()
   }
@@ -328,6 +332,18 @@ class VehicleAnimation extends Vue {
     globalStore.commit('setFullScreen', false)
     this.$store.commit('setFullScreen', false)
     this.myState.isRunning = false
+  }
+
+  private async loadFiles() {
+    try {
+      const json = await this.myState.fileApi.getFileJson(
+        this.myState.subfolder + '/' + this.vizDetails.drtTrips
+      )
+
+      return json
+    } catch (e) {
+      this.myState.statusMessage = '' + e
+    }
   }
 
   private clickedHelp() {
