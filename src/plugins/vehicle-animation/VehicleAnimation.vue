@@ -8,7 +8,7 @@
     .big.time.clock(v-else)
       p {{ myState.clock }}
 
-  .right-side
+  .right-side(v-if="!thumbnail")
     .morestuff(v-if="isLoaded")
       vue-slider.speed-slider(v-model="speed"
         :data="speedStops"
@@ -21,7 +21,7 @@
       p.speed-label(
         :style="{'color': textColor.text}") {{ speed }}x speed
 
-  playback-controls.playback-stuff(v-if="isLoaded"
+  playback-controls.playback-stuff(v-if="!thumbnail && isLoaded"
     @click='toggleSimulation'
     @time='setTime'
     :timeStart = "timeStart"
@@ -34,7 +34,7 @@
   //-     i.help-button-text.fa.fa-1x.fa-question
   //-   img.theme-button(src="@/assets/images/darkmode.jpg" @click='rotateColors' title="dark/light theme")
 
-  trip-layer.anim(v-if="!thumbnail" :simulationTime="simulationTime")
+  trip-viz.anim(v-if="!thumbnail" :simulationTime="simulationTime")
 
   //- .legend(:class="{dark: isDarkMode}")
   //-   p(:style="{color: isDarkMode ? '#fff' : '#000'}") Legend:
@@ -65,7 +65,7 @@ import {
   DARK_MODE,
 } from '@/Globals'
 
-import TripLayer from '@/plugins/vehicle-animation/TripViz'
+import TripViz from '@/plugins/vehicle-animation/TripViz'
 import HTTPFileSystem from '@/util/HTTPFileSystem'
 
 // AnimationView,
@@ -79,7 +79,7 @@ import { VuePlugin } from 'vuera'
 
 Vue.use(VuePlugin)
 
-@Component({ components: { TripLayer, VueSlider, PlaybackControls, ToggleButton } as any })
+@Component({ components: { TripViz, VueSlider, PlaybackControls, ToggleButton } as any })
 class VehicleAnimation extends Vue {
   @Prop({ required: false })
   private fileApi!: FileSystem
