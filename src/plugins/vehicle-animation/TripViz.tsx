@@ -10,7 +10,8 @@ import PathTraceLayer from '@/layers/path-trace/path-trace'
 const ICON_MAPPING = {
   marker: { x: 0, y: 0, width: 128, height: 128, mask: true },
   info: { x: 128, y: 0, width: 128, height: 128, mask: true },
-  vehicle: { x: 128, y: 128, width: 128, height: 128, mask: true },
+  vehicle: { x: 128, y: 128, width: 128, height: 128, mask: false },
+  diamond: { x: 0, y: 128, width: 128, height: 128, mask: false },
 }
 
 // Set your mapbox token here
@@ -41,7 +42,7 @@ const COLOR_OCCUPANCY: any = {
 }
 
 const DEFAULT_THEME = {
-  buildingColor: [74, 80, 87],
+  vehicleColor: [200, 130, 250],
   trailColor0: [235, 235, 25],
   trailColor1: [23, 184, 190],
   effects: [lightingEffect],
@@ -78,7 +79,7 @@ export default function Component(props: any) {
       getTimeStart: (d: any) => d.t0,
       getTimeEnd: (d: any) => d.t1,
       getColor: (d: any) => COLOR_OCCUPANCY[d.occ],
-      getWidth: (d: any) => 4.0 * d.occ - 3.0,
+      getWidth: (d: any) => 3.0 * d.occ - 2,
       opacity: 0.9,
       widthMinPixels: 2,
       rounded: false,
@@ -99,12 +100,15 @@ export default function Component(props: any) {
     // }),
     //@ts-ignore
     new MovingIconLayer({
-      id: 'dots',
+      id: 'sprites',
       data: trips,
       getPath: (d: any) => d.path,
       getTimestamps: (d: any) => d.timestamps,
       getIcon: (d: any) => 'vehicle',
-      getSize: (d: any) => 36,
+      iconMoving: 'vehicle',
+      iconStill: 'diamond',
+      getSize: 48,
+      getColor: theme.vehicleColor,
       opacity: 1.0,
       currentTime: props.simulationTime,
       shadowEnabled: false,
@@ -114,7 +118,6 @@ export default function Component(props: any) {
       iconMapping: ICON_MAPPING,
       sizeScale: 1,
       billboard: true,
-      getColor: theme.trailColor0,
     }),
   ]
 

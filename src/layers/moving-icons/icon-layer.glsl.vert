@@ -18,6 +18,10 @@ uniform bool billboard;
 
 uniform float currentTime;
 
+uniform vec2 iconStillOffsets;
+uniform float iconStillColorModes;
+uniform vec4 iconStillFrames;
+
 attribute float instanceTimestamps;
 attribute float instanceTimestampsNext;
 attribute vec3 instanceStartPositions;
@@ -63,14 +67,13 @@ void main(void) {
   // skip everything else if this vertex is outside the time window
   if (vPercentComplete == -1.0) return;
 
-  // geometry.worldPosition = instancePositions;
-  // geometry.uv = positions;
   geometry.pickingColor = instancePickingColors;
-  // uv = positions;
 
-  vec2 iconSize = instanceIconFrames.zw;
+  // are we stationary/still
+  bool still = (instanceStartPositions == instanceEndPositions);
+
+  vec2 iconSize = still ? iconStillFrames.zw : instanceIconFrames.zw;
   // convert size in meters to pixels, then scaled and clamp
-
   // project meters to pixels and clamp to limits
   float sizePixels = clamp(
     project_size_to_pixel(instanceSizes * sizeScale),
@@ -81,15 +84,17 @@ void main(void) {
   float instanceScale = iconSize.y == 0.0 ? 0.0 : sizePixels / iconSize.y;
 
   // figure out angle
-  vec3 point1 = project_position_to_clipspace(instanceStartPositions, vec3(0.0), vec3(0.0)).xyz;
-  vec3 point2 = project_position_to_clipspace(instanceEndPositions, vec3(0.0), vec3(0.0)).xyz;
-  vec3 direction = normalize(point2 - point1);
-  // vec3 direction = normalize(instanceEndPositions - instanceStartPositions); //
-  float angle = atan( direction.y / direction.x);
-  if (direction.x < 0.0) angle = angle - PI;
+  float angle = 0.0;
+  if (!still) {
+    vec3 point1 = project_position_to_clipspace(instanceStartPositions, vec3(0.0), vec3(0.0)).xyz;
+    vec3 point2 = project_position_to_clipspace(instanceEndPositions, vec3(0.0), vec3(0.0)).xyz;
+    vec3 direction = normalize(point2 - point1);
+    angle = atan( direction.y / direction.x);
+    if (direction.x < 0.0) angle = angle - PI;
+  }
 
   // scale and rotate vertex in "pixel" value and convert back to fraction in clipspace
-  vec2 pixelOffset = positions / 2.0 * iconSize + instanceOffsets;
+  vec2 pixelOffset = positions / 2.0 * iconSize + (still ? iconStillOffsets : instanceOffsets);
   pixelOffset = rotate_by_angle(pixelOffset, angle) * instanceScale;
   pixelOffset += instancePixelOffset;
   pixelOffset.y *= -1.0;
@@ -113,14 +118,16 @@ void main(void) {
 
   DECKGL_FILTER_GL_POSITION(gl_Position, geometry);
 
+  vec2 upperleft = (still ? iconStillFrames.xy : instanceIconFrames.xy);
+
   vTextureCoords = mix(
-    instanceIconFrames.xy,
-    instanceIconFrames.xy + iconSize,
+    upperleft,
+    upperleft + iconSize,
     (positions.xy + 1.0) / 2.0
   ) / iconsTextureDim;
 
   vColor = instanceColors;
   DECKGL_FILTER_COLOR(vColor, geometry);
 
-  vColorMode = instanceColorModes;
+  vColorMode = (still ? iconStillColorModes : instanceColorModes);
 }
