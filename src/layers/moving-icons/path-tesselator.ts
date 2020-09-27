@@ -23,6 +23,8 @@ const START_CAP = 1
 const END_CAP = 2
 const INVALID = 4
 
+const DEFAULT_Z_INDEX = 1
+
 function normalizePath(path: any, size: number) {
   let flatPath = path
   if (Array.isArray(path[0])) {
@@ -168,7 +170,7 @@ export default class PathTesselator extends Tesselator {
     const i = index * positionSize
     target[0] = path[i]
     target[1] = path[i + 1]
-    target[2] = (positionSize === 3 && path[i + 2]) || 0
+    target[2] = (positionSize === 3 && path[i + 2]) || DEFAULT_Z_INDEX
     return target
   }
 

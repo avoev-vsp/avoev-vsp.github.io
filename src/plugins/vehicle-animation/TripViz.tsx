@@ -32,11 +32,20 @@ const pointLight = new PointLight({
 
 const lightingEffect = new LightingEffect({ ambientLight, pointLight })
 
-const COLOR_OCCUPANCY: any = {
+const COLOR_OCCUPANCY_MATSIM: any = {
   0: [255, 85, 255],
   1: [255, 255, 85],
   2: [85, 255, 85],
   3: [85, 85, 255],
+  4: [255, 85, 85],
+  5: [255, 85, 0],
+}
+
+const COLOR_OCCUPANCY: any = {
+  0: [255, 85, 255],
+  1: [255, 255, 85],
+  2: [32, 96, 255],
+  3: [85, 255, 85],
   4: [255, 85, 85],
   5: [255, 85, 0],
 }
@@ -54,6 +63,46 @@ const INITIAL_VIEW_STATE = {
   zoom: 11,
   minZoom: 2,
   maxZoom: 22,
+}
+
+// function handleClick(e: any) {
+//   console.log(e)
+// }
+
+// function handleHover(e: any) {
+//   e.setStyle
+// }
+
+// function handleUnhover(e: any) {
+//   console.log(e)
+// }
+
+function renderTooltip({ hoverInfo }: any) {
+  const { object, x, y } = hoverInfo
+
+  if (!object) {
+    return null
+  }
+
+  const content = <div>Passengers: {object.occ} </div>
+
+  return (
+    <div
+      className="tooltip"
+      style={{
+        backgroundColor: '#000000cc',
+        borderLeft: '5px solid grey',
+        color: '#ddd',
+        padding: '1rem 1rem',
+        position: 'absolute',
+        left: x + 40,
+        top: y - 30,
+      }}
+    >
+      <big>Vehicle: {object.veh}</big>
+      {content}
+    </div>
+  )
 }
 
 export default function Component(props: any) {
@@ -84,6 +133,10 @@ export default function Component(props: any) {
       widthMinPixels: 2,
       rounded: false,
       shadowEnabled: false,
+      pickable: true,
+      autoHighlight: true,
+      highlightColor: [255, 0, 255],
+      onHover: setHoverInfo,
     }),
     // new TripsLayer({
     //   id: 'worms',
@@ -113,11 +166,13 @@ export default function Component(props: any) {
       currentTime: props.simulationTime,
       shadowEnabled: false,
       noAlloc: true,
-      pickable: true,
       iconAtlas: '/icon-atlas.png',
       iconMapping: ICON_MAPPING,
       sizeScale: 1,
       billboard: true,
+      pickable: true,
+      autoHighlight: true,
+      highlightColor: [255, 0, 255],
     }),
   ]
 
@@ -128,6 +183,7 @@ export default function Component(props: any) {
       pickingRadius={5}
       initialViewState={INITIAL_VIEW_STATE}
       controller={true}
+      getCursor={() => 'pointer'}
     >
       {
         /*
@@ -139,7 +195,7 @@ export default function Component(props: any) {
           mapboxApiAccessToken={MAPBOX_TOKEN}
         />
       }
-      {/* {renderTooltip({ incidents, fatalities, year, hoverInfo })} */}
+      {renderTooltip({ hoverInfo })}
     </DeckGL>
   )
 }

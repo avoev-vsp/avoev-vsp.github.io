@@ -331,7 +331,7 @@ class VehicleAnimation extends Vue {
     if (this.myState.isRunning) {
       const elapsed = Date.now() - this.timeElapsedSinceLastFrame
       this.timeElapsedSinceLastFrame += elapsed
-      this.simulationTime += elapsed * this.speed * 0.06
+      this.simulationTime += elapsed * this.speed * 0.12
       this.setWallClock()
     }
     window.requestAnimationFrame(this.animate)
@@ -743,6 +743,10 @@ img.theme-button:hover {
   padding: 5px 10px;
 }
 
+.tooltip {
+  padding: 5rem 5rem;
+  background-color: #ccc;
+}
 @media only screen and (max-width: 640px) {
   .nav {
     padding: 0rem 0.5rem;
