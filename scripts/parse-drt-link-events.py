@@ -27,7 +27,7 @@ outfile = "drt-vehicles.json"
 print("reading network", sys.argv[1])
 network = matsim.read_network(sys.argv[1])
 
-# Build link x/y lookup -- use 'to_node' (endpoint) of link
+# Build link x/y lookup
 nodes = network.nodes >> mutate(to_node=X.node_id, from_node=X.node_id)
 links = (
     network.links
@@ -48,7 +48,10 @@ for link in links.values:
     )
 
 print("reading events", sys.argv[2])
-events = matsim.event_reader(sys.argv[2], types="entered link,left link")
+events = matsim.event_reader(
+    sys.argv[2],
+    types="entered link,left link,vehicle enters traffic,vehicle leaves traffic,PersonEntersVehicle,PersonLeavesVehicle",
+)
 
 # lookups by person's health status, coords, and timepoints
 agents = {}
@@ -69,39 +72,49 @@ for event in events:
 
     # create a hollow person
     if person_id not in agents:
-        agents[person_id] = {"id": person_id, "trips": []}
+        agents[person_id] = {"id": person_id, "trips": [], "passengers": 0}
 
     person = agents[person_id]
 
-    if event["type"] == "entered link":
-        act_ends[person_id] = time
+    if "link" in event:
         link = link_coords[event["link"]]
-        cur_location[person_id] = (link[0], link[1])
 
-    if event["type"] == "left link":
-        end_loc = (link_coords[event["link"]][2], link_coords[event["link"]][3])
+    # Pickup/Dropoff
+    if event["type"] == "PersonEntersVehicle":
+        person["passengers"] += 1
 
-        if person_id in cur_location:
-            # we have a location/time, create a trip
-            start_loc = cur_location[person_id]
+    elif event["type"] == "PersonLeavesVehicle":
+        person["passengers"] -= 1
+        if person["passengers"] < 0:
+            person["passengers"] = 0
+            print("whoops, negative passengers", person_id)
 
-            coords = [start_loc, end_loc]
+    # enters traffic: guess it's at midpoint of link
+    elif event["type"] == "vehicle enters traffic":
+        midpoint = [0.5 * (link[0] + link[2]), 0.5 * (link[1] + link[3])]
+        person["trips"].append((time, midpoint, person["passengers"]))
 
-            # don't save stupid trips
-            saveTrip = True
-            if start_loc[0] == end_loc[0] and start_loc[1] == end_loc[1]:
-                saveTrip = False
-            if time == act_ends[person_id]:
-                saveTrip = False
+    elif event["type"] == "entered link":
+        # start-node
+        start = [link[0], link[1]]
+        # don't dupe previous node
+        prevTime, prevLocation, passengers = person["trips"][-1]
 
-            # save it
-            if saveTrip:
-                person["trips"].extend(
-                    [(act_ends[person_id], coords[0]), (time, coords[1])]
-                )
+        if (
+            time != prevTime
+            or start[0] != prevLocation[0]
+            or start[1] != prevLocation[1]
+        ):
+            person["trips"].append((time, start, person["passengers"]))
 
-        # we're at an activity, so park at this location until the next trip
-        cur_location[person_id] = end_loc
+    elif event["type"] == "left link":
+        # end-node
+        person["trips"].append((time, [link[2], link[3]], person["passengers"]))
+
+    elif event["type"] == "vehicle leaves traffic":
+        midpoint = [0.5 * (link[0] + link[2]), 0.5 * (link[1] + link[3])]
+        person["trips"].append((time, midpoint, person["passengers"]))
+
 
 # get everything sorted
 for person in agents.values():
@@ -109,6 +122,7 @@ for person in agents.values():
     person["trips"] = sorted(person["trips"], key=lambda k: k[0])
     person["timestamps"] = [t[0] for t in person["trips"]]
     person["path"] = [t[1] for t in person["trips"]]
+    person["passengers"] = [t[2] for t in person["trips"]]
     person["vendor"] = 0
     del person["trips"]
 

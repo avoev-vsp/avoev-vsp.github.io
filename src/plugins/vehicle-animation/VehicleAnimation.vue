@@ -35,7 +35,7 @@
   //-   img.theme-button(src="@/assets/images/darkmode.jpg" @click='rotateColors' title="dark/light theme")
 
   trip-viz.anim(v-if="!thumbnail" :simulationTime="simulationTime"
-                :json="$options.myJson")
+                :json="$options.json" :traces="$options.traces")
 
   //- .legend(:class="{dark: isDarkMode}")
   //-   p(:style="{color: isDarkMode ? '#fff' : '#000'}") Legend:
@@ -286,7 +286,7 @@ class VehicleAnimation extends Vue {
   private setWallClock() {
     const hour = Math.floor(this.simulationTime / 3600)
     const minute = Math.floor(this.simulationTime / 60) % 60
-    this.myState.clock = (hour < 10 ? '0' : '') + hour + (minute < 10 ? ':0' : ':') + minute
+    this.myState.clock = `${hour < 10 ? '0' : ''}${hour}${minute < 10 ? ':0' : ':'}${minute}`
   }
 
   private setTime(seconds: number) {
@@ -315,8 +315,10 @@ class VehicleAnimation extends Vue {
     this.updateLegendColors()
 
     //@ts-ignore:
-    this.$options.myJson = await this.loadFiles()
-    // this.myState.json = await this.loadFiles()
+    this.$options.json = await this.loadFiles()
+
+    //@ts-ignore:
+    this.$options.traces = await this.parseJson()
 
     this.myState.isRunning = true
     this.animate()
@@ -328,6 +330,59 @@ class VehicleAnimation extends Vue {
       this.setWallClock()
     }
     window.requestAnimationFrame(this.animate)
+  }
+
+  // convert path/timestamp info into path traces we can use
+  private parseJson() {
+    console.log('parsing traces')
+    let countTraces = 0
+    const traces: any = []
+    let countVehicles = 0
+
+    //@ts-ignore:
+    this.$options.json.forEach((vehicle: any) => {
+      countVehicles++
+
+      let time = vehicle.timestamps[0]
+      let nextTime = vehicle.timestamps[0]
+
+      let segments: any[] = []
+
+      for (let i = 1; i < vehicle.path.length; i++) {
+        nextTime = vehicle.timestamps[i]
+
+        // same point? start of new path.
+        if (
+          vehicle.path[i][0] === vehicle.path[i - 1][0] &&
+          vehicle.path[i][1] === vehicle.path[i - 1][1]
+        ) {
+          segments.forEach(segment => {
+            segment.t1 = vehicle.timestamps[i - 1]
+          })
+
+          traces.push(...segments)
+
+          segments = []
+          time = nextTime
+        } else {
+          segments.push({
+            t0: time,
+            p0: vehicle.path[i - 1],
+            p1: vehicle.path[i],
+            veh: countVehicles,
+            occ: vehicle.passengers[i - 1],
+          })
+        }
+      }
+
+      // save final segments
+      segments.forEach(segment => {
+        segment.t1 = nextTime
+      })
+      traces.push(...segments)
+    })
+    // console.log({ traces })
+    return traces
   }
 
   private beforeDestroy() {

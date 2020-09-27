@@ -2,11 +2,10 @@ import React, { useState, useMemo, useEffect } from 'react'
 import { StaticMap } from 'react-map-gl'
 import { AmbientLight, PointLight, LightingEffect } from '@deck.gl/core'
 import DeckGL from '@deck.gl/react'
-import { IconLayer } from '@deck.gl/layers'
-import { scaleLinear, scaleThreshold } from 'd3-scale'
 import { TripsLayer } from '@deck.gl/geo-layers'
 
 import MovingIconLayer from '@/layers/moving-icons/moving-icon-layer'
+import PathTraceLayer from '@/layers/path-trace/path-trace'
 
 const ICON_MAPPING = {
   marker: { x: 0, y: 0, width: 128, height: 128, mask: true },
@@ -32,9 +31,18 @@ const pointLight = new PointLight({
 
 const lightingEffect = new LightingEffect({ ambientLight, pointLight })
 
+const COLOR_OCCUPANCY: any = {
+  0: [255, 85, 255],
+  1: [255, 255, 85],
+  2: [85, 255, 85],
+  3: [85, 85, 255],
+  4: [255, 85, 85],
+  5: [255, 85, 0],
+}
+
 const DEFAULT_THEME = {
   buildingColor: [74, 80, 87],
-  trailColor0: [255, 255, 25],
+  trailColor0: [235, 235, 25],
   trailColor1: [23, 184, 190],
   effects: [lightingEffect],
 }
@@ -53,38 +61,50 @@ export default function Component(props: any) {
   // mapStyle = "mapbox://styles/mapbox/dark-v10",
 
   const trips = props.json
-  const trailLength = 75
+  const traces = props.traces
+  const trailLength = 50
   const theme = DEFAULT_THEME
 
   const [hoverInfo, setHoverInfo] = useState({})
 
   const layers = [
-    new TripsLayer({
-      id: 'worms',
-      data: trips,
-      //@ts-ignore
-      getPath: d => d.path,
-      //@ts-ignore
-      getTimestamps: d => d.timestamps,
-      //@ts-ignore
-      getColor: d => (d.vendor === 0 ? theme.trailColor1 : theme.trailColor0),
-      opacity: 0.4,
-      widthMinPixels: 6.5,
-      rounded: false,
-      trailLength,
+    //@ts-ignore:
+    new PathTraceLayer({
+      id: 'traces',
+      data: traces,
       currentTime: props.simulationTime,
+      getSourcePosition: (d: any) => d.p0,
+      getTargetPosition: (d: any) => d.p1,
+      getTimeStart: (d: any) => d.t0,
+      getTimeEnd: (d: any) => d.t1,
+      getColor: (d: any) => COLOR_OCCUPANCY[d.occ],
+      getWidth: (d: any) => 4.0 * d.occ - 3.0,
+      opacity: 0.9,
+      widthMinPixels: 2,
+      rounded: false,
       shadowEnabled: false,
     }),
+    // new TripsLayer({
+    //   id: 'worms',
+    //   data: trips,
+    //   getPath: (d: any) => d.path,
+    //   getTimestamps: (d: any) => d.timestamps,
+    //   getColor: (d: any) => (d.vendor === 0 ? theme.trailColor1 : theme.trailColor0),
+    //   opacity: 0.4,
+    //   widthMinPixels: 6.5,
+    //   rounded: false,
+    //   trailLength,
+    //   currentTime: props.simulationTime,
+    //   shadowEnabled: false,
+    // }),
     //@ts-ignore
     new MovingIconLayer({
       id: 'dots',
       data: trips,
-      //@ts-ignore
-      getPath: d => d.path,
-      //@ts-ignore
-      getTimestamps: d => d.timestamps,
+      getPath: (d: any) => d.path,
+      getTimestamps: (d: any) => d.timestamps,
       getIcon: (d: any) => 'vehicle',
-      getSize: (d: any) => 30,
+      getSize: (d: any) => 36,
       opacity: 1.0,
       currentTime: props.simulationTime,
       shadowEnabled: false,
