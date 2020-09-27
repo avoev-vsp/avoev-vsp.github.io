@@ -121,6 +121,7 @@ class VehicleAnimation extends Vue {
   private timeEnd = 86400
 
   private simulationTime = 5 * 3600
+  private timeElapsedSinceLastFrame = 0
 
   private globalState = globalStore.state
   private isDarkMode = this.myState.colorScheme === ColorScheme.DarkMode
@@ -295,6 +296,7 @@ class VehicleAnimation extends Vue {
   }
   private toggleSimulation() {
     this.myState.isRunning = !this.myState.isRunning
+    this.timeElapsedSinceLastFrame = Date.now()
 
     // ok so, many times I mashed the play/pause wondering why things wouldn't
     // start moving. Turns out a 0x speed is not very helpful! Help the user
@@ -321,12 +323,15 @@ class VehicleAnimation extends Vue {
     this.$options.traces = await this.parseJson()
 
     this.myState.isRunning = true
+    this.timeElapsedSinceLastFrame = Date.now()
     this.animate()
   }
 
   private animate() {
     if (this.myState.isRunning) {
-      this.simulationTime += this.speed * 4.0
+      const elapsed = Date.now() - this.timeElapsedSinceLastFrame
+      this.timeElapsedSinceLastFrame += elapsed
+      this.simulationTime += elapsed * this.speed * 0.06
       this.setWallClock()
     }
     window.requestAnimationFrame(this.animate)
