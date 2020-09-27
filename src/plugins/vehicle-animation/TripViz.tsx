@@ -58,9 +58,9 @@ const DEFAULT_THEME = {
 }
 
 const INITIAL_VIEW_STATE = {
-  latitude: 51.55,
-  longitude: 7,
-  zoom: 11,
+  latitude: 51.57,
+  longitude: 6.98,
+  zoom: 12,
   minZoom: 2,
   maxZoom: 22,
 }

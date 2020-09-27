@@ -323,8 +323,11 @@ class VehicleAnimation extends Vue {
     this.$options.traces = await this.parseJson()
 
     this.myState.isRunning = true
-    this.timeElapsedSinceLastFrame = Date.now()
-    this.animate()
+
+    setTimeout(() => {
+      this.timeElapsedSinceLastFrame = Date.now()
+      this.animate()
+    }, 2000)
   }
 
   private animate() {
