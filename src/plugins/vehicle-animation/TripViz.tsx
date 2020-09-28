@@ -42,12 +42,12 @@ const COLOR_OCCUPANCY_MATSIM: any = {
 }
 
 const COLOR_OCCUPANCY: any = {
-  0: [255, 85, 255],
-  1: [255, 255, 85],
-  2: [32, 96, 255],
-  3: [85, 255, 85],
-  4: [255, 85, 85],
-  5: [255, 85, 0],
+  0: [255, 255, 85],
+  1: [32, 96, 255],
+  2: [85, 255, 85],
+  3: [255, 85, 85],
+  4: [255, 85, 0],
+  5: [255, 85, 255],
 }
 
 const DEFAULT_THEME = {
@@ -84,14 +84,13 @@ function renderTooltip({ hoverInfo }: any) {
     return null
   }
 
-  const content = <div>Passengers: {object.occ} </div>
-
   return (
     <div
       className="tooltip"
       style={{
-        backgroundColor: '#000000cc',
-        borderLeft: '5px solid grey',
+        backgroundColor: '#000000d4  ',
+        borderLeft: '6px solid white',
+        boxShadow: '2.5px 2px 4px rgba(0,0,0,0.25)',
         color: '#ddd',
         padding: '1rem 1rem',
         position: 'absolute',
@@ -99,8 +98,8 @@ function renderTooltip({ hoverInfo }: any) {
         top: y - 30,
       }}
     >
-      <big>Vehicle: {object.veh}</big>
-      {content}
+      <big>Taxi: {object.veh}</big>
+      <div>Passagiere: {object.occ} </div>
     </div>
   )
 }
@@ -128,7 +127,7 @@ export default function Component(props: any) {
       getTimeStart: (d: any) => d.t0,
       getTimeEnd: (d: any) => d.t1,
       getColor: (d: any) => COLOR_OCCUPANCY[d.occ],
-      getWidth: (d: any) => 3.0 * d.occ - 2,
+      getWidth: (d: any) => 3.0 * (d.occ + 1) - 1,
       opacity: 0.9,
       widthMinPixels: 2,
       rounded: false,

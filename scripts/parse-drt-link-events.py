@@ -17,15 +17,26 @@ try:
     import sys
     import matsim
     from dfply import *
+    from pyproj import Transformer
 except:
     print("OOPS! Error importing required libraries.")
     print('try "pip install matsim-tools ndjson dfply"')
 
+if len(sys.argv) != 4:
+    print(
+        "USAGE:  python parse-drt-link-events.py  [network]  [events]  [coord-system]"
+    )
+    sys.exit(1)
+
+p_network = sys.argv[1]
+p_events = sys.argv[2]
+p_coords = sys.argv[3]
+
 # outfile hard-coded for now
 outfile = "drt-vehicles.json"
 
-print("reading network", sys.argv[1])
-network = matsim.read_network(sys.argv[1])
+print("reading network:", p_network)
+network = matsim.read_network(p_network)
 
 # Build link x/y lookup
 nodes = network.nodes >> mutate(to_node=X.node_id, from_node=X.node_id)
@@ -47,9 +58,9 @@ for link in links.values:
         float(link[4]),
     )
 
-print("reading events", sys.argv[2])
+print("reading events:", p_events)
 events = matsim.event_reader(
-    sys.argv[2],
+    p_events,
     types="entered link,left link,vehicle enters traffic,vehicle leaves traffic,PersonEntersVehicle,PersonLeavesVehicle",
 )
 
@@ -70,9 +81,9 @@ for event in events:
     person_id = event["vehicle"]
     time = int(event["time"])
 
-    # create a hollow person
+    # create a hollow person: -1 passengers because driver doesn't count
     if person_id not in agents:
-        agents[person_id] = {"id": person_id, "trips": [], "passengers": 0}
+        agents[person_id] = {"id": person_id, "trips": [], "passengers": -1}
 
     person = agents[person_id]
 
@@ -85,9 +96,9 @@ for event in events:
 
     elif event["type"] == "PersonLeavesVehicle":
         person["passengers"] -= 1
-        if person["passengers"] < 0:
-            person["passengers"] = 0
-            print("whoops, negative passengers", person_id)
+        if person["passengers"] < -1:
+            person["passengers"] = -1
+            print("whoops, very negative occupancy", person_id)
 
     # enters traffic: guess it's at midpoint of link
     elif event["type"] == "vehicle enters traffic":
@@ -116,7 +127,9 @@ for event in events:
         person["trips"].append((time, midpoint, person["passengers"]))
 
 
-# get everything sorted
+# get everything sorted and converted
+coord_transformer = Transformer.from_crs(p_coords, "EPSG:4326")
+
 for person in agents.values():
     # print(person, "\n")
     person["trips"] = sorted(person["trips"], key=lambda k: k[0])
@@ -126,10 +139,24 @@ for person in agents.values():
     person["vendor"] = 0
     del person["trips"]
 
+    # convert coords to lat/lon
+    latlon = []
+    for x, y in person["path"]:
+        lat, lon = coord_transformer.transform(x, y)
+        answer = [round(lon, 5), round(lat, 5)]
+        latlon.extend([answer])
+    person["path"] = latlon
+
 # write it out
+print("Writing:", outfile)
+
 with open(outfile, "w") as f:
+    f.writelines("[")
     writer = ndjson.writer(f, separators=(",", ":"))
-    for agent in agents.values():
+    for i, agent in enumerate(agents.values()):
         writer.writerow(agent)
+        if i < len(agents) - 1:
+            f.writelines(",")
+    f.writelines("]")
 
 print(len(agents), "agents written.")
