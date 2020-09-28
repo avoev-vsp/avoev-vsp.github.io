@@ -18,9 +18,6 @@ import { Vue, Component, Watch, Prop } from 'vue-property-decorator'
 import VueSlider from 'vue-slider-component'
 import * as timeConvert from 'convert-seconds'
 
-import store from '@/store'
-import EventBus from '@/EventBus.vue'
-
 @Component({ components: { VueSlider }, props: {} })
 export default class VueComponent extends Vue {
   @Prop({ required: true })

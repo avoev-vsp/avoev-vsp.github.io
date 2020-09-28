@@ -563,6 +563,13 @@ h3.curate-heading {
   border-bottom: 1px solid $themeColorPaler;
 }
 
+@media only screen and (max-width: 900px) {
+  .viz-table {
+    grid-gap: 1rem;
+    grid-template-columns: repeat(2, minmax(100px, 1fr));
+  }
+}
+
 @media only screen and (max-width: 640px) {
   .project-bar {
     padding: 1rem 1rem 1.5rem 1rem;

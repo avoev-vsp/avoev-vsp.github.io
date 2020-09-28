@@ -35,7 +35,6 @@ import store from '@/store'
 import Colophon from '@/components/Colophon.vue'
 import LoginPanel from '@/components/LoginPanel.vue'
 import SideNavBar from '@/components/SideNavBar.vue'
-import TopNavBar from '@/components/TopNavBar.vue'
 
 // MAPBOX TOKEN
 // this is a required workaround to get the mapbox token assigned in TypeScript
@@ -44,7 +43,7 @@ const writableMapBox: any = mapboxgl
 writableMapBox.accessToken =
   'pk.eyJ1IjoidnNwLXR1LWJlcmxpbiIsImEiOiJjamNpemh1bmEzNmF0MndudHI5aGFmeXpoIn0.u9f04rjFo7ZbWiSceTTXyA'
 
-@Component({ components: { TopNavBar, SideNavBar, LoginPanel, Colophon } })
+@Component({ components: { SideNavBar, LoginPanel, Colophon } })
 class App extends Vue {
   private state = store.state
 
@@ -106,8 +105,8 @@ html {
 }
 
 .breadcrumbs-bar {
-  background-color: $tuRed;
-  padding: 0.3rem 3rem;
+  background-color: $steelGray; // $tuRed;
+  padding: 0.6rem 3rem;
   transition: padding 0.2s ease-in-out;
 }
 
@@ -189,8 +188,9 @@ h3 {
   flex: 1;
 }
 
-#nav a.router-link-exact-active {
+.router-link-exact-active {
   color: #ffffff;
+  font-weight: bold;
 }
 
 .space {
@@ -220,9 +220,8 @@ h3 {
   font-size: 0.8rem;
   margin: 0 0;
   padding: 1rem 1rem;
+  background-color: $steelGray;
   color: #ccc;
-
-  background-color: $colorBoldBackground;
 }
 
 .footer a {
