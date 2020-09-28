@@ -694,7 +694,7 @@ img.theme-button:hover {
   }
 
   .right-side {
-    margin-right: 1rem;
+    margin-right: 0.25rem;
   }
 
   .big {
