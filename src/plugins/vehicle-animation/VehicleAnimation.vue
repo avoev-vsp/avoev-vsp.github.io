@@ -150,7 +150,9 @@ class VehicleAnimation extends Vue {
   private timeStart = 0
   private timeEnd = 86400
 
-  private simulationTime = 5 * 3600
+  // 06:35:10
+  private simulationTime = 6 * 3600 + 35 * 60 + 10
+
   private timeElapsedSinceLastFrame = 0
 
   private globalState = globalStore.state
@@ -608,7 +610,7 @@ img.theme-button:hover {
   margin-right: 1rem;
   padding: 0 0;
   color: white;
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 .logo {
@@ -690,10 +692,15 @@ img.theme-button:hover {
 }
 @media only screen and (max-width: 640px) {
   .nav {
-    padding: 0rem 0.5rem;
+    padding: 0.5rem 0.5rem;
+  }
+
+  .clock {
+    text-align: center;
   }
 
   .right-side {
+    font-size: 0.7rem;
     margin-right: 0.25rem;
   }
 
@@ -702,22 +709,6 @@ img.theme-button:hover {
     margin-top: 0.5rem;
     font-size: 1.3rem;
     line-height: 2rem;
-  }
-
-  .legend {
-    margin-left: 0.5rem;
-    display: flex;
-    flex-direction: row;
-    font-size: 0.7rem;
-  }
-
-  .legend-items {
-    flex: 1;
-    margin-left: 2rem;
-    display: grid;
-    grid-auto-flow: row;
-    grid-template-columns: repeat(4, auto);
-    font-size: 0.7rem;
   }
 
   .side-section {
@@ -729,39 +720,6 @@ img.theme-button:hover {
   }
   .playback-stuff {
     padding-right: 1rem;
-  }
-
-  .day-button {
-    color: transparent;
-    background-color: #eeeeeedd;
-    font-size: 0.7rem;
-    width: 1rem;
-    height: 0.5rem;
-    text-align: center;
-    //padding-top: 2px;
-    cursor: pointer;
-    pointer-events: auto;
-  }
-
-  .day-button.dark {
-    color: transparent;
-    background-color: #222222cc;
-    border: 1px solid black;
-  }
-
-  .day-button.currentday {
-    color: transparent;
-    background-color: white;
-  }
-
-  .switchers {
-    width: 1.5rem;
-    height: 1.5rem;
-    color: black;
-  }
-  .switchers.dark {
-    color: white;
-    background-color: #223;
   }
 }
 </style>
