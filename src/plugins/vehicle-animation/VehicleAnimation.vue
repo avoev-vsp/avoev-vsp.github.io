@@ -5,21 +5,28 @@
   .nav(v-if="!thumbnail")
     p.big.day {{ vizDetails.title }}
     p.big.time(v-if="myState.statusMessage") {{ myState.statusMessage }}
-    .big.time.clock(v-else)
-      p {{ myState.clock }}
 
   .right-side(v-if="!thumbnail")
+
+    .big.time.clock(v-if="!myState.statusMessage")
+      p {{ myState.clock }}
+
     .morestuff(v-if="isLoaded")
-      vue-slider.speed-slider(v-model="speed"
-        :data="speedStops"
-        :duration="0"
-        :dotSize="20"
-        tooltip="active"
-        tooltip-placement="bottom"
-        :tooltip-formatter="val => val + 'x'"
-      )
-      p.speed-label(
-        :style="{'color': textColor.text}") {{ speed }}x speed
+
+      legend-colors.legend-block(v-if="legendItems.length"
+        title="Passagiere:" :items="legendItems")
+
+      .speed-block
+        p.speed-label(
+          :style="{'color': textColor.text}") Geschwindigkeit: {{ speed }}x
+        vue-slider.speed-slider(v-model="speed"
+          :data="speedStops"
+          :duration="0"
+          :dotSize="20"
+          tooltip="active"
+          tooltip-placement="bottom"
+          :tooltip-formatter="val => val + 'x'"
+        )
 
   playback-controls.playback-stuff(v-if="!thumbnail && isLoaded"
     @click='toggleSimulation'
@@ -35,12 +42,7 @@
   //-   img.theme-button(src="@/assets/images/darkmode.jpg" @click='rotateColors' title="dark/light theme")
 
   trip-viz.anim(v-if="!thumbnail" :simulationTime="simulationTime"
-                :json="$options.json" :traces="$options.traces")
-
-  //- .legend(:class="{dark: isDarkMode}")
-  //-   p(:style="{color: isDarkMode ? '#fff' : '#000'}") Legend:
-  //-   .legend-items
-  //-     p.legend-item(v-for="status in legendBits" :key="status.label" :style="{color: status.color}") {{ status.label }}
+                :json="$options.json" :traces="$options.traces" :colors="COLOR_OCCUPANCY")
 
 </template>
 
@@ -53,15 +55,20 @@ import readBlob from 'read-blob'
 import { Route } from 'vue-router'
 import YAML from 'yaml'
 import vuera from 'vuera'
+
 import globalStore from '@/store'
 import AnimationView from '@/plugins/agent-animation/AnimationView.vue'
+import LegendColors from '@/components/LegendColors'
 import ModalMarkdownDialog from '@/components/ModalMarkdownDialog.vue'
 import PlaybackControls from './PlaybackControls.vue'
+
 import {
+  ColorScheme,
   FileSystem,
+  LegendItem,
+  LegendItemType,
   SVNProject,
   VisualizationPlugin,
-  ColorScheme,
   LIGHT_MODE,
   DARK_MODE,
 } from '@/Globals'
@@ -77,10 +84,11 @@ import HTTPFileSystem from '@/util/HTTPFileSystem'
 
 import Vue from 'vue'
 import { VuePlugin } from 'vuera'
-
 Vue.use(VuePlugin)
 
-@Component({ components: { TripViz, VueSlider, PlaybackControls, ToggleButton } as any })
+@Component({
+  components: { LegendColors, TripViz, VueSlider, PlaybackControls, ToggleButton } as any,
+})
 class VehicleAnimation extends Vue {
   @Prop({ required: false })
   private fileApi!: FileSystem
@@ -93,6 +101,28 @@ class VehicleAnimation extends Vue {
 
   @Prop({ required: false })
   private thumbnail!: boolean
+
+  private COLOR_OCCUPANCY: any = {
+    0: [255, 255, 85],
+    1: [32, 96, 255],
+    2: [85, 255, 85],
+    3: [255, 85, 85],
+    4: [200, 0, 0],
+    // 5: [255, 150, 255],
+  }
+
+  COLOR_OCCUPANCY_MATSIM_UNUSED: any = {
+    0: [255, 85, 255],
+    1: [255, 255, 85],
+    2: [85, 255, 85],
+    3: [85, 85, 255],
+    4: [255, 85, 85],
+    5: [255, 85, 0],
+  }
+
+  private legendItems: LegendItem[] = Object.keys(this.COLOR_OCCUPANCY).map(key => {
+    return { type: LegendItemType.line, color: this.COLOR_OCCUPANCY[key], value: key }
+  })
 
   private vizDetails = {
     network: '',
@@ -464,15 +494,12 @@ export default VehicleAnimation
   background: url('assets/thumbnail.jpg') no-repeat;
   background-size: cover;
   pointer-events: none;
-  grid-template-columns: 1fr 6rem;
-  grid-template-rows: auto auto 1fr auto auto auto;
+  grid-template-columns: 1fr min-content;
+  grid-template-rows: auto 1fr auto;
   grid-template-areas:
-    'hd              hd'
+    'hd       rightside'
     '.        rightside'
-    '.                .'
-    '.     extrabuttons'
-    'playback  playback'
-    'legend      legend';
+    'playback  playback';
 }
 
 #v3-app.hide-thumbnail {
@@ -531,53 +558,35 @@ img.theme-button:hover {
   }
 }
 
-.legend {
-  margin-left: 1rem;
-  grid-area: legend;
-  display: flex;
-  flex-direction: row;
-  font-weight: bold;
-  font-size: 1rem;
-  background-color: #ddc;
+.morestuff {
+  background-color: #00000099;
 }
 
-.legend-items {
-  flex: 1;
-  display: flex;
-  flex-direction: row;
-  margin-left: 2rem;
-  justify-content: space-evenly;
+.speed-block {
+  margin-top: 2rem;
+  padding: 0 0.25rem 0 0.5rem;
 }
 
-.legend-item {
-  margin-right: 0.25rem;
-}
-
-.legend.dark {
-  background-color: #181518;
+.legend-block {
+  margin-top: 2rem;
+  padding: 0rem 0.25rem;
 }
 
 .speed-slider {
   flex: 1;
   width: 100%;
-  margin: 0.5rem 0rem 0.25rem 0;
+  margin: 0rem 0.25rem 0rem 0rem;
   pointer-events: auto;
   font-weight: bold;
 }
 
 .big {
-  color: red;
   opacity: 0.85;
   padding: 0rem 0;
   margin-top: 1rem;
-  margin-bottom: 0.5rem;
   font-size: 2rem;
   line-height: 3.75rem;
   font-weight: bold;
-}
-
-.day {
-  flex: 1;
 }
 
 .controls {
@@ -592,13 +601,11 @@ img.theme-button:hover {
 }
 
 .right-side {
-  // z-index: 10;
   grid-area: rightside;
   font-size: 0.8rem;
   display: flex;
   flex-direction: column;
   margin-right: 1rem;
-  text-align: right;
   padding: 0 0;
   color: white;
   pointer-events: auto;
@@ -609,59 +616,6 @@ img.theme-button:hover {
   margin-top: auto;
   margin-left: auto;
   margin-bottom: none;
-}
-
-.side-section {
-  grid-area: days;
-  margin: 0.6rem auto auto 0.5rem;
-  padding: 0rem 1rem 0 0.5rem;
-}
-
-.day-button-grid {
-  margin: 0.5rem auto 0 0;
-  margin-right: auto;
-  display: flex;
-  flex-wrap: wrap;
-  padding: 1px 1px;
-  width: 4.4rem;
-}
-
-.day-button {
-  margin: 1px 1px;
-  background-color: #eeeeeeee;
-  // border: 1px solid white;
-  font-size: 0.7rem;
-  width: 1.2rem;
-  height: 1.2rem;
-  text-align: center;
-  //padding-top: 2px;
-  cursor: pointer;
-  pointer-events: auto;
-}
-
-.day-button:hover,
-.day-button:active {
-  background-color: white;
-  font-weight: bold;
-}
-
-.day-button.dark {
-  background-color: #222222ee;
-  color: #bbb;
-  border: 1px solid black;
-}
-
-.day-button.dark:hover,
-.day-button.dark:active {
-  background-color: black;
-  border: 2px solid $themeColor;
-  font-weight: bold;
-}
-
-.day-button.currentday {
-  background-color: $themeColor;
-  font-weight: bold;
-  color: white;
 }
 
 .help-button {
@@ -688,7 +642,7 @@ img.theme-button:hover {
 }
 
 .playback-stuff {
-  margin-bottom: 1rem;
+  margin-bottom: 2rem;
   grid-area: playback;
   padding: 0rem 1rem 1rem 2rem;
   pointer-events: auto;
@@ -718,31 +672,15 @@ img.theme-button:hover {
 
 .speed-label {
   font-weight: bold;
-  margin-bottom: 1rem;
-  margin-top: 0.25rem;
-}
-
-.day-switchers {
-  display: flex;
-  flex-direction: row;
-}
-
-.switchers {
-  margin-right: 0.3rem;
-  width: 1.8rem;
-  height: 1.8rem;
-  padding-top: 0.2rem;
-  font-size: 1rem;
 }
 
 .clock {
-  background-color: #00000080;
-  margin-right: 0.25rem;
+  background-color: #00000099;
   border: 3px solid white;
 }
 
 .clock p {
-  margin-left: 0.5rem;
+  margin-left: 0.25rem;
   padding: 5px 10px;
 }
 

@@ -32,24 +32,6 @@ const pointLight = new PointLight({
 
 const lightingEffect = new LightingEffect({ ambientLight, pointLight })
 
-const COLOR_OCCUPANCY_MATSIM: any = {
-  0: [255, 85, 255],
-  1: [255, 255, 85],
-  2: [85, 255, 85],
-  3: [85, 85, 255],
-  4: [255, 85, 85],
-  5: [255, 85, 0],
-}
-
-const COLOR_OCCUPANCY: any = {
-  0: [255, 255, 85],
-  1: [32, 96, 255],
-  2: [85, 255, 85],
-  3: [255, 85, 85],
-  4: [255, 85, 0],
-  5: [255, 85, 255],
-}
-
 const DEFAULT_THEME = {
   vehicleColor: [200, 130, 250],
   trailColor0: [235, 235, 25],
@@ -64,18 +46,6 @@ const INITIAL_VIEW_STATE = {
   minZoom: 2,
   maxZoom: 22,
 }
-
-// function handleClick(e: any) {
-//   console.log(e)
-// }
-
-// function handleHover(e: any) {
-//   e.setStyle
-// }
-
-// function handleUnhover(e: any) {
-//   console.log(e)
-// }
 
 function renderTooltip({ hoverInfo }: any) {
   const { object, x, y } = hoverInfo
@@ -104,7 +74,12 @@ function renderTooltip({ hoverInfo }: any) {
   )
 }
 
-export default function Component(props: any) {
+export default function Component(props: {
+  simulationTime: number
+  json: any
+  traces: any
+  colors: any
+}) {
   const mapStyle = 'mapbox://styles/vsp-tu-berlin/ckek59op0011219pbwfar1rex'
   // const mapStyle = 'mapbox://styles/vsp-tu-berlin/ckeetelh218ef19ob5nzw5vbh'
   // mapStyle = "mapbox://styles/mapbox/dark-v10",
@@ -126,7 +101,7 @@ export default function Component(props: any) {
       getTargetPosition: (d: any) => d.p1,
       getTimeStart: (d: any) => d.t0,
       getTimeEnd: (d: any) => d.t1,
-      getColor: (d: any) => COLOR_OCCUPANCY[d.occ],
+      getColor: (d: any) => props.colors[d.occ],
       getWidth: (d: any) => 3.0 * (d.occ + 1) - 1,
       opacity: 0.9,
       widthMinPixels: 2,
@@ -137,19 +112,6 @@ export default function Component(props: any) {
       highlightColor: [255, 0, 255],
       onHover: setHoverInfo,
     }),
-    // new TripsLayer({
-    //   id: 'worms',
-    //   data: trips,
-    //   getPath: (d: any) => d.path,
-    //   getTimestamps: (d: any) => d.timestamps,
-    //   getColor: (d: any) => (d.vendor === 0 ? theme.trailColor1 : theme.trailColor0),
-    //   opacity: 0.4,
-    //   widthMinPixels: 6.5,
-    //   rounded: false,
-    //   trailLength,
-    //   currentTime: props.simulationTime,
-    //   shadowEnabled: false,
-    // }),
     //@ts-ignore
     new MovingIconLayer({
       id: 'sprites',
