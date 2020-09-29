@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react'
 import { StaticMap } from 'react-map-gl'
 import { AmbientLight, PointLight, LightingEffect } from '@deck.gl/core'
 import DeckGL from '@deck.gl/react'
-import { ArcLayer } from '@deck.gl/layers'
+import DrtRequestLayer from './DrtRequestLayer'
 
 import MovingIconLayer from '@/layers/moving-icons/moving-icon-layer'
 import PathTraceLayer from '@/layers/path-trace/path-trace'
@@ -93,17 +93,6 @@ export default function Component(props: {
   const arcWidth = 1
   const [hoverInfo, setHoverInfo] = useState({})
 
-  const currentDrtRequests: any[] = []
-
-  if (drtRequests) {
-    drtRequests.forEach(request => {
-      if (simulationTime < request.time) return
-      if (!request.arrival) return
-      if (simulationTime > request.arrival) return
-      currentDrtRequests.push(request)
-    })
-  }
-
   const layers = [
     //@ts-ignore:
     new PathTraceLayer({
@@ -148,11 +137,15 @@ export default function Component(props: {
       autoHighlight: true,
       highlightColor: [255, 0, 255],
     }),
-    new ArcLayer({
+    //@ts-ignore:
+    new DrtRequestLayer({
       id: 'drtRequests',
-      data: currentDrtRequests,
+      data: drtRequests,
+      currentTime: props.simulationTime,
       getSourcePosition: (d: any) => [d.fromX, d.fromY],
       getTargetPosition: (d: any) => [d.toX, d.toY],
+      getTimeStart: (d: any) => d.time,
+      getTimeEnd: (d: any) => d.arrival,
       getSourceColor: [255, 255, 255],
       getTargetColor: [200, 0, 255],
       getWidth: arcWidth,
