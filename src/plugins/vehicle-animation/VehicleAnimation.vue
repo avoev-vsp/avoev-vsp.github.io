@@ -16,6 +16,8 @@
       legend-colors.legend-block(v-if="legendItems.length"
         title="Passagiere:" :items="legendItems")
 
+      legend-colors.legend-block(title="Anfragen:" :items="legendRequests")
+
       .speed-block
         p.speed-label(
           :style="{'color': textColor.text}") Geschwindigkeit: {{ speed }}x
@@ -42,7 +44,10 @@
   //-   img.theme-button(src="@/assets/images/darkmode.jpg" @click='rotateColors' title="dark/light theme")
 
   trip-viz.anim(v-if="!thumbnail" :simulationTime="simulationTime"
-                :json="$options.json" :traces="$options.traces" :colors="COLOR_OCCUPANCY")
+                :paths="$options.paths"
+                :drtRequests="$options.drtRequests"
+                :traces="$options.traces"
+                :colors="COLOR_OCCUPANCY")
 
 </template>
 
@@ -121,12 +126,17 @@ class VehicleAnimation extends Vue {
   }
 
   private legendItems: LegendItem[] = Object.keys(this.COLOR_OCCUPANCY).map(key => {
-    return { type: LegendItemType.line, color: this.COLOR_OCCUPANCY[key], value: key }
+    return { type: LegendItemType.line, color: this.COLOR_OCCUPANCY[key], value: key, label: key }
   })
+
+  private legendRequests = [
+    { type: LegendItemType.line, color: [255, 0, 255], value: 0, label: '' },
+  ]
 
   private vizDetails = {
     network: '',
     drtTrips: '',
+    drtRequests: '',
     projection: '',
     title: '',
     description: '',
@@ -348,8 +358,13 @@ class VehicleAnimation extends Vue {
     this.generateBreadcrumbs()
     this.updateLegendColors()
 
+    const { paths, drtRequests } = await this.loadFiles()
+
     //@ts-ignore:
-    this.$options.json = await this.loadFiles()
+    this.$options.paths = paths
+
+    //@ts-ignore:
+    this.$options.drtRequests = drtRequests
 
     //@ts-ignore:
     this.$options.traces = await this.parseJson()
@@ -380,7 +395,7 @@ class VehicleAnimation extends Vue {
     let countVehicles = 0
 
     //@ts-ignore:
-    this.$options.json.forEach((vehicle: any) => {
+    this.$options.paths.forEach((vehicle: any) => {
       countVehicles++
 
       let time = vehicle.timestamps[0]
@@ -432,18 +447,26 @@ class VehicleAnimation extends Vue {
   }
 
   private async loadFiles() {
-    let json: any = []
+    let paths: any = []
+    let drtRequests: any = []
 
     try {
-      const json = await this.myState.fileApi.getFileJson(
+      paths = await this.myState.fileApi.getFileJson(
         this.myState.subfolder + '/' + this.vizDetails.drtTrips
       )
 
-      return json
+      const drtRequestsRaw = await this.myState.fileApi.getFileText(
+        this.myState.subfolder + '/' + this.vizDetails.drtRequests
+      )
+      drtRequests = Papaparse.parse(drtRequestsRaw, {
+        header: true,
+        dynamicTyping: true,
+      }).data
+      console.log({ drtRequests })
     } catch (e) {
       this.myState.statusMessage = '' + e
     }
-    return json
+    return { paths, drtRequests }
   }
 
   private clickedHelp() {

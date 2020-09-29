@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react'
 import { StaticMap } from 'react-map-gl'
 import { AmbientLight, PointLight, LightingEffect } from '@deck.gl/core'
 import DeckGL from '@deck.gl/react'
-import { TripsLayer } from '@deck.gl/geo-layers'
+import { ArcLayer } from '@deck.gl/layers'
 
 import MovingIconLayer from '@/layers/moving-icons/moving-icon-layer'
 import PathTraceLayer from '@/layers/path-trace/path-trace'
@@ -43,6 +43,7 @@ const INITIAL_VIEW_STATE = {
   latitude: 51.57,
   longitude: 6.98,
   zoom: 12,
+  pitch: 45,
   minZoom: 2,
   maxZoom: 22,
 }
@@ -76,7 +77,8 @@ function renderTooltip({ hoverInfo }: any) {
 
 export default function Component(props: {
   simulationTime: number
-  json: any
+  paths: any
+  drtRequests: any[]
   traces: any
   colors: any
 }) {
@@ -84,12 +86,23 @@ export default function Component(props: {
   // const mapStyle = 'mapbox://styles/vsp-tu-berlin/ckeetelh218ef19ob5nzw5vbh'
   // mapStyle = "mapbox://styles/mapbox/dark-v10",
 
-  const trips = props.json
-  const traces = props.traces
-  const trailLength = 50
+  const { simulationTime, paths, traces, drtRequests } = props
+
   const theme = DEFAULT_THEME
 
+  const arcWidth = 1
   const [hoverInfo, setHoverInfo] = useState({})
+
+  const currentDrtRequests: any[] = []
+
+  if (drtRequests) {
+    drtRequests.forEach(request => {
+      if (simulationTime < request.time) return
+      if (!request.arrival) return
+      if (simulationTime > request.arrival) return
+      currentDrtRequests.push(request)
+    })
+  }
 
   const layers = [
     //@ts-ignore:
@@ -115,7 +128,7 @@ export default function Component(props: {
     //@ts-ignore
     new MovingIconLayer({
       id: 'sprites',
-      data: trips,
+      data: paths,
       getPath: (d: any) => d.path,
       getTimestamps: (d: any) => d.timestamps,
       getIcon: (d: any) => 'vehicle',
@@ -134,6 +147,16 @@ export default function Component(props: {
       pickable: true,
       autoHighlight: true,
       highlightColor: [255, 0, 255],
+    }),
+    new ArcLayer({
+      id: 'drtRequests',
+      data: currentDrtRequests,
+      getSourcePosition: (d: any) => [d.fromX, d.fromY],
+      getTargetPosition: (d: any) => [d.toX, d.toY],
+      getSourceColor: [255, 255, 255],
+      getTargetColor: [200, 0, 255],
+      getWidth: arcWidth,
+      opacity: 0.2,
     }),
   ]
 

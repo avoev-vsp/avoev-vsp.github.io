@@ -150,4 +150,5 @@ export interface LegendItem {
   type: LegendItemType
   color: number[]
   value: any
+  label?: string
 }

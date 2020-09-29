@@ -13,6 +13,7 @@
 # ]
 
 try:
+    import csv
     import ndjson
     import sys
     import matsim
@@ -28,12 +29,15 @@ if len(sys.argv) != 4:
     )
     sys.exit(1)
 
+# outfile hard-coded for now
+out_paths = "drt-vehicles.json"
+out_requests = "drt-requests.csv"
+
 p_network = sys.argv[1]
 p_events = sys.argv[2]
 p_coords = sys.argv[3]
 
-# outfile hard-coded for now
-outfile = "drt-vehicles.json"
+coord_transformer = Transformer.from_crs(p_coords, "EPSG:4326")
 
 print("reading network:", p_network)
 network = matsim.read_network(p_network)
@@ -61,21 +65,37 @@ for link in links.values:
 print("reading events:", p_events)
 events = matsim.event_reader(
     p_events,
-    types="entered link,left link,vehicle enters traffic,vehicle leaves traffic,PersonEntersVehicle,PersonLeavesVehicle",
+    types="entered link,left link,vehicle enters traffic,vehicle leaves traffic,PersonEntersVehicle,PersonLeavesVehicle,DrtRequest submitted",
 )
 
 # lookups by person's health status, coords, and timepoints
 agents = {}
-
-act_ends = {}
-cur_location = {}
+drt_requests = {}
+drt_request_list = []
 
 for event in events:
-    # only interested in DRT vehicle events
-    if not event["vehicle"]:
+    # only interested in (1) DRT requests and (2) DRT vehicle events
+    if event["type"] == "DrtRequest submitted":
+        coord = link_coords[event["fromLink"]]
+        x, y = (0.5 * (coord[0] + coord[2]), 0.5 * (coord[1] + coord[3]))
+        lat, lon = coord_transformer.transform(x, y)
+        coord_from = [round(lon, 5), round(lat, 5)]
+
+        coord = link_coords[event["toLink"]]
+        x, y = (0.5 * (coord[0] + coord[2]), 0.5 * (coord[1] + coord[3]))
+        lat, lon = coord_transformer.transform(x, y)
+        coord_to = [round(lon, 5), round(lat, 5)]
+
+        drt_requests[event["person"]] = [
+            event["time"],
+            coord_from[0],
+            coord_from[1],
+            coord_to[0],
+            coord_to[1],
+        ]
         continue
 
-    if not event["vehicle"].startswith("drt"):
+    elif "vehicle" in event and not "drt" in event["vehicle"]:
         continue
 
     person_id = event["vehicle"]
@@ -99,6 +119,10 @@ for event in events:
         if person["passengers"] < -1:
             person["passengers"] = -1
             print("whoops, very negative occupancy", person_id)
+        if event["person"] in drt_requests:
+            drt_requests[event["person"]].append(event["time"])
+            drt_request_list.append(drt_requests[event["person"]])
+            del drt_requests[event["person"]]
 
     # enters traffic: guess it's at midpoint of link
     elif event["type"] == "vehicle enters traffic":
@@ -128,7 +152,6 @@ for event in events:
 
 
 # get everything sorted and converted
-coord_transformer = Transformer.from_crs(p_coords, "EPSG:4326")
 
 for person in agents.values():
     # print(person, "\n")
@@ -147,10 +170,18 @@ for person in agents.values():
         latlon.extend([answer])
     person["path"] = latlon
 
-# write it out
-print("Writing:", outfile)
+# some requests went unanswered?
+print(list(drt_requests.values()))
 
-with open(outfile, "w") as f:
+abandoned = map(lambda x: x + [-1], drt_requests.values())
+drt_request_list.extend(abandoned)
+
+# sort requests by request time
+drt_requests = sorted(drt_request_list)
+
+# write it out
+print("Writing:", out_paths)
+with open(out_paths, "w") as f:
     f.writelines("[")
     writer = ndjson.writer(f, separators=(",", ":"))
     for i, agent in enumerate(agents.values()):
@@ -159,4 +190,11 @@ with open(outfile, "w") as f:
             f.writelines(",")
     f.writelines("]")
 
+print("Writing:", out_requests)
+with open(out_requests, "w") as f:
+    f.writelines("time,fromX,fromY,toX,toY,arrival\n")
+    writer = csv.writer(f, lineterminator="\n")
+    writer.writerows(drt_requests)
+
 print(len(agents), "agents written.")
+print(len(drt_requests), "drt requests written.")

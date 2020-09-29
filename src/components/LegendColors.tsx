@@ -12,11 +12,11 @@ export default function Component(props: {
       <div
         style={{
           width: '100%',
-          height: `${Math.max(2, 3.0 * (1 * item.value - 1) + 3)}px`,
+          height: `${Math.max(1, 3.0 * (1 * item.value - 1) + 3)}px`,
           backgroundColor: `rgb(${item.color})`,
         }}
       ></div>
-      <div style={{ marginBottom: '0.5rem' }}>{item.value}</div>
+      {item.label && <div style={{ marginBottom: '0.5rem' }}>{item.label}</div>}
     </li>
   ))
 
