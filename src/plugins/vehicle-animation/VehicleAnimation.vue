@@ -11,7 +11,7 @@
     .big.time.clock(v-if="!myState.statusMessage")
       p {{ myState.clock }}
 
-    .morestuff(v-if="isLoaded")
+    .dark-panel(v-if="isLoaded")
 
       legend-colors.legend-block(v-if="legendItems.length"
         title="Passagiere:" :items="legendItems")
@@ -136,7 +136,6 @@ class VehicleAnimation extends Vue {
   private vizDetails = {
     network: '',
     drtTrips: '',
-    drtRequests: '',
     projection: '',
     title: '',
     description: '',
@@ -161,7 +160,10 @@ class VehicleAnimation extends Vue {
   private timeEnd = 86400
 
   // 06:35:10
-  private simulationTime = 6 * 3600 + 35 * 60 + 10
+  // private simulationTime = 6 * 3600 + 35 * 60 + 10
+
+  // 08:10:00
+  private simulationTime = 8 * 3600 + 10 * 60 + 10
 
   private timeElapsedSinceLastFrame = 0
 
@@ -299,17 +301,16 @@ class VehicleAnimation extends Vue {
   }
 
   private updateLegendColors() {
-    const theme = this.myState.colorScheme == ColorScheme.LightMode ? LIGHT_MODE : DARK_MODE
-
-    this.legendBits = [
-      { label: 'susceptible', color: theme.susceptible },
-      { label: 'latently infected', color: theme.infectedButNotContagious },
-      { label: 'contagious', color: theme.contagious },
-      { label: 'symptomatic', color: theme.symptomatic },
-      { label: 'seriously ill', color: theme.seriouslyIll },
-      { label: 'critical', color: theme.critical },
-      { label: 'recovered', color: theme.recovered },
-    ]
+    // const theme = this.myState.colorScheme == ColorScheme.LightMode ? LIGHT_MODE : DARK_MODE
+    // this.legendBits = [
+    //   { label: 'susceptible', color: theme.susceptible },
+    //   { label: 'latently infected', color: theme.infectedButNotContagious },
+    //   { label: 'contagious', color: theme.contagious },
+    //   { label: 'symptomatic', color: theme.symptomatic },
+    //   { label: 'seriously ill', color: theme.seriouslyIll },
+    //   { label: 'critical', color: theme.critical },
+    //   { label: 'recovered', color: theme.recovered },
+    // ]
   }
 
   private get textColor() {
@@ -381,7 +382,7 @@ class VehicleAnimation extends Vue {
     if (this.myState.isRunning) {
       const elapsed = Date.now() - this.timeElapsedSinceLastFrame
       this.timeElapsedSinceLastFrame += elapsed
-      this.simulationTime += elapsed * this.speed * 0.12
+      this.simulationTime += elapsed * this.speed * 0.06
       this.setWallClock()
     }
     window.requestAnimationFrame(this.animate)
@@ -436,7 +437,6 @@ class VehicleAnimation extends Vue {
       })
       traces.push(...segments)
     })
-    // console.log({ traces })
     return traces
   }
 
@@ -451,19 +451,13 @@ class VehicleAnimation extends Vue {
     let drtRequests: any = []
 
     try {
-      paths = await this.myState.fileApi.getFileJson(
+      const json = await this.myState.fileApi.getFileJson(
         this.myState.subfolder + '/' + this.vizDetails.drtTrips
       )
-
-      const drtRequestsRaw = await this.myState.fileApi.getFileText(
-        this.myState.subfolder + '/' + this.vizDetails.drtRequests
-      )
-      drtRequests = Papaparse.parse(drtRequestsRaw, {
-        header: true,
-        dynamicTyping: true,
-      }).data
-      console.log({ drtRequests })
+      paths = json.trips
+      drtRequests = json.drtRequests
     } catch (e) {
+      console.error(e)
       this.myState.statusMessage = '' + e
     }
     return { paths, drtRequests }
@@ -583,8 +577,8 @@ img.theme-button:hover {
   }
 }
 
-.morestuff {
-  background-color: #00000099;
+.dark-panel {
+  background-color: #000000cc;
 }
 
 .speed-block {
@@ -606,7 +600,6 @@ img.theme-button:hover {
 }
 
 .big {
-  opacity: 0.85;
   padding: 0rem 0;
   margin-top: 1rem;
   font-size: 2rem;
@@ -700,7 +693,7 @@ img.theme-button:hover {
 }
 
 .clock {
-  background-color: #00000099;
+  background-color: #000000cc;
   border: 3px solid white;
 }
 

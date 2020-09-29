@@ -43,9 +43,18 @@ const INITIAL_VIEW_STATE = {
   latitude: 51.57,
   longitude: 6.98,
   zoom: 12,
-  pitch: 45,
+  pitch: 55,
   minZoom: 2,
   maxZoom: 22,
+}
+
+const DRT_REQUEST = {
+  time: 0,
+  fromX: 1,
+  fromY: 2,
+  toX: 3,
+  toY: 4,
+  arrival: 5,
 }
 
 function renderTooltip({ hoverInfo }: any) {
@@ -90,7 +99,7 @@ export default function Component(props: {
 
   const theme = DEFAULT_THEME
 
-  const arcWidth = 1
+  const arcWidth = 2
   const [hoverInfo, setHoverInfo] = useState({})
 
   const layers = [
@@ -142,10 +151,10 @@ export default function Component(props: {
       id: 'drtRequests',
       data: drtRequests,
       currentTime: props.simulationTime,
-      getSourcePosition: (d: any) => [d.fromX, d.fromY],
-      getTargetPosition: (d: any) => [d.toX, d.toY],
-      getTimeStart: (d: any) => d.time,
-      getTimeEnd: (d: any) => d.arrival,
+      getSourcePosition: (d: any) => [d[DRT_REQUEST.fromX], d[DRT_REQUEST.fromY]],
+      getTargetPosition: (d: any) => [d[DRT_REQUEST.toX], d[DRT_REQUEST.toY]],
+      getTimeStart: (d: any) => d[DRT_REQUEST.time],
+      getTimeEnd: (d: any) => d[DRT_REQUEST.arrival],
       getSourceColor: [255, 255, 255],
       getTargetColor: [200, 0, 255],
       getWidth: arcWidth,

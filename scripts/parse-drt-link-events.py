@@ -13,7 +13,6 @@
 # ]
 
 try:
-    import csv
     import ndjson
     import sys
     import matsim
@@ -182,19 +181,21 @@ drt_requests = sorted(drt_request_list)
 # write it out
 print("Writing:", out_paths)
 with open(out_paths, "w") as f:
-    f.writelines("[")
+    f.writelines('{"trips": [\n')
     writer = ndjson.writer(f, separators=(",", ":"))
     for i, agent in enumerate(agents.values()):
         writer.writerow(agent)
         if i < len(agents) - 1:
             f.writelines(",")
-    f.writelines("]")
+    f.writelines("],\n")
 
-print("Writing:", out_requests)
-with open(out_requests, "w") as f:
-    f.writelines("time,fromX,fromY,toX,toY,arrival\n")
-    writer = csv.writer(f, lineterminator="\n")
-    writer.writerows(drt_requests)
+    f.writelines('"drtRequests": [\n')
+    for i, request in enumerate(drt_requests):
+        writer.writerow(request)
+        if i < len(drt_requests) - 1:
+            f.writelines(",")
 
-print(len(agents), "agents written.")
+    f.writelines("]\n}\n")
+
+print(len(agents), "vehicle paths written.")
 print(len(drt_requests), "drt requests written.")
