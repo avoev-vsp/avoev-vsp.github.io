@@ -13,10 +13,10 @@
 
     .dark-panel(v-if="isLoaded")
 
+      legend-colors.legend-block(title="Anfragen:" :items="legendRequests")
+
       legend-colors.legend-block(v-if="legendItems.length"
         title="Passagiere:" :items="legendItems")
-
-      legend-colors.legend-block(title="Anfragen:" :items="legendRequests")
 
       .speed-block
         p.speed-label(
@@ -361,6 +361,8 @@ class VehicleAnimation extends Vue {
 
     const { paths, drtRequests } = await this.loadFiles()
 
+    this.setWallClock()
+
     //@ts-ignore:
     this.$options.paths = paths
 
@@ -373,6 +375,7 @@ class VehicleAnimation extends Vue {
     this.myState.isRunning = true
 
     setTimeout(() => {
+      document.addEventListener('visibilitychange', this.handleVisibilityChange, false)
       this.timeElapsedSinceLastFrame = Date.now()
       this.animate()
     }, 2000)
@@ -386,6 +389,20 @@ class VehicleAnimation extends Vue {
       this.setWallClock()
     }
     window.requestAnimationFrame(this.animate)
+  }
+
+  private isPausedDueToHiding = false
+
+  private handleVisibilityChange() {
+    if (this.isPausedDueToHiding && !document.hidden) {
+      console.log('unpausing')
+      this.isPausedDueToHiding = false
+      this.toggleSimulation()
+    } else if (this.myState.isRunning && document.hidden) {
+      console.log('pausing')
+      this.isPausedDueToHiding = true
+      this.toggleSimulation()
+    }
   }
 
   // convert path/timestamp info into path traces we can use
@@ -441,6 +458,7 @@ class VehicleAnimation extends Vue {
   }
 
   private beforeDestroy() {
+    document.removeEventListener('visibilityChange', this.handleVisibilityChange)
     globalStore.commit('setFullScreen', false)
     this.$store.commit('setFullScreen', false)
     this.myState.isRunning = false
@@ -578,7 +596,7 @@ img.theme-button:hover {
 }
 
 .dark-panel {
-  background-color: #000000cc;
+  background-color: $steelGray; // #000000cc;
 }
 
 .speed-block {
