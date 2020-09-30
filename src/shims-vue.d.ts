@@ -25,6 +25,7 @@ declare module 'vue-table-component'
 declare module 'vue-video-player'
 declare module 'vuera'
 declare module 'zip-loader'
+declare module 'react-toggle'
 
 declare module '@turf/point-to-line-distance'
 declare module '@turf/nearest-point-to-line'

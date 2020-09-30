@@ -13,10 +13,13 @@
 
     .dark-panel(v-if="isLoaded")
 
+      settings-panel.settings-area(:items="SETTINGS" :onClick="handleSettingChange")
+
       legend-colors.legend-block(title="Anfragen:" :items="legendRequests")
 
       legend-colors.legend-block(v-if="legendItems.length"
         title="Passagiere:" :items="legendItems")
+
 
       .speed-block
         p.speed-label(
@@ -30,13 +33,15 @@
           :tooltip-formatter="val => val + 'x'"
         )
 
-  playback-controls.playback-stuff(v-if="!thumbnail && isLoaded"
-    @click='toggleSimulation'
-    @time='setTime'
-    :timeStart = "timeStart"
-    :timeEnd = "timeEnd"
-    :isRunning = "myState.isRunning"
-    :currentTime = "simulationTime")
+  .bottom-area
+
+    playback-controls.playback-stuff(v-if="!thumbnail && isLoaded"
+      @click='toggleSimulation'
+      @time='setTime'
+      :timeStart = "timeStart"
+      :timeEnd = "timeEnd"
+      :isRunning = "myState.isRunning"
+      :currentTime = "simulationTime")
 
   //- .extra-buttons(v-if="isLoaded")
   //-   .help-button(@click='clickedHelp' title="info")
@@ -47,7 +52,8 @@
                 :paths="$options.paths"
                 :drtRequests="$options.drtRequests"
                 :traces="$options.traces"
-                :colors="COLOR_OCCUPANCY")
+                :colors="COLOR_OCCUPANCY"
+                :settingsShowLayers="SETTINGS")
 
 </template>
 
@@ -66,6 +72,7 @@ import AnimationView from '@/plugins/agent-animation/AnimationView.vue'
 import LegendColors from '@/components/LegendColors'
 import ModalMarkdownDialog from '@/components/ModalMarkdownDialog.vue'
 import PlaybackControls from './PlaybackControls.vue'
+import SettingsPanel from '@/components/SettingsPanel'
 
 import {
   ColorScheme,
@@ -92,7 +99,14 @@ import { VuePlugin } from 'vuera'
 Vue.use(VuePlugin)
 
 @Component({
-  components: { LegendColors, TripViz, VueSlider, PlaybackControls, ToggleButton } as any,
+  components: {
+    SettingsPanel,
+    LegendColors,
+    TripViz,
+    VueSlider,
+    PlaybackControls,
+    ToggleButton,
+  } as any,
 })
 class VehicleAnimation extends Vue {
   @Prop({ required: false })
@@ -123,6 +137,12 @@ class VehicleAnimation extends Vue {
     3: [85, 85, 255],
     4: [255, 85, 85],
     5: [255, 85, 0],
+  }
+
+  SETTINGS: { [label: string]: boolean } = {
+    Fahrzeuge: true,
+    Kurse: true,
+    'DRT Anfragen': true,
   }
 
   private legendItems: LegendItem[] = Object.keys(this.COLOR_OCCUPANCY).map(key => {
@@ -159,9 +179,6 @@ class VehicleAnimation extends Vue {
   private timeStart = 0
   private timeEnd = 86400
 
-  // 06:35:10
-  // private simulationTime = 6 * 3600 + 35 * 60 + 10
-
   // 08:10:00
   private simulationTime = 8 * 3600 + 10 * 60 + 10
 
@@ -176,6 +193,11 @@ class VehicleAnimation extends Vue {
   private speed = 1
 
   private legendBits: any[] = []
+
+  private handleSettingChange(label: string) {
+    console.log(label)
+    this.SETTINGS[label] = !this.SETTINGS[label]
+  }
 
   // this happens if viz is the full page, not a thumbnail on a project page
   private buildRouteFromUrl() {
@@ -407,7 +429,6 @@ class VehicleAnimation extends Vue {
 
   // convert path/timestamp info into path traces we can use
   private parseJson() {
-    console.log('parsing traces')
     let countTraces = 0
     const traces: any = []
     let countVehicles = 0
@@ -524,6 +545,7 @@ export default VehicleAnimation
 <style scoped lang="scss">
 @import '~vue-slider-component/theme/default.css';
 @import '@/styles.scss';
+@import '~react-toggle/style.css';
 
 #v3-app {
   display: grid;
@@ -619,7 +641,7 @@ img.theme-button:hover {
 
 .big {
   padding: 0rem 0;
-  margin-top: 1rem;
+  // margin-top: 1rem;
   font-size: 2rem;
   line-height: 3.75rem;
   font-weight: bold;
@@ -641,7 +663,7 @@ img.theme-button:hover {
   font-size: 0.8rem;
   display: flex;
   flex-direction: column;
-  margin-right: 1rem;
+  // margin-right: 1rem;
   padding: 0 0;
   color: white;
   pointer-events: none;
@@ -678,10 +700,25 @@ img.theme-button:hover {
 }
 
 .playback-stuff {
+  flex: 1;
+}
+
+.bottom-area {
+  display: flex;
+  flex-direction: row;
   margin-bottom: 2rem;
   grid-area: playback;
   padding: 0rem 1rem 1rem 2rem;
   pointer-events: auto;
+}
+
+.settings-area {
+  pointer-events: auto;
+  background-color: $steelGray;
+  color: white;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.25rem;
+  margin: 1rem 2rem 0 0;
 }
 
 .extra-buttons {
