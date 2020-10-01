@@ -39,11 +39,9 @@ const DEFAULT_THEME = {
   effects: [lightingEffect],
 }
 
-const GLADBECK = [6.9814, 51.57]
-const BERLIN = [52.1, 14]
 const INITIAL_VIEW_STATE = {
-  latitude: GLADBECK[1],
-  longitude: GLADBECK[0],
+  latitude: 52.1,
+  longitude: 14,
   zoom: 12,
   pitch: 0,
   minZoom: 2,
@@ -92,15 +90,20 @@ export default function Component(props: {
   drtRequests: any[]
   traces: any[]
   colors: any
+  center: [number, number]
   settingsShowLayers: { [label: string]: boolean }
 }) {
   const mapStyle = 'mapbox://styles/vsp-tu-berlin/ckek59op0011219pbwfar1rex'
   // const mapStyle = 'mapbox://styles/vsp-tu-berlin/ckeetelh218ef19ob5nzw5vbh'
   // mapStyle = "mapbox://styles/mapbox/dark-v10",
 
-  const { simulationTime, paths, traces, drtRequests, settingsShowLayers } = props
+  const { simulationTime, paths, traces, drtRequests, settingsShowLayers, center } = props
 
   const theme = DEFAULT_THEME
+
+  const initialView = Object.assign({}, INITIAL_VIEW_STATE)
+  initialView.latitude = center[1]
+  initialView.longitude = center[0]
 
   const arcWidth = 1
   const [hoverInfo, setHoverInfo] = useState({})
@@ -183,7 +186,7 @@ export default function Component(props: {
       layers={layers}
       effects={theme.effects}
       pickingRadius={5}
-      initialViewState={INITIAL_VIEW_STATE}
+      initialViewState={initialView}
       controller={true}
       getCursor={() => 'pointer'}
     >

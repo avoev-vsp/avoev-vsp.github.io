@@ -54,7 +54,8 @@
                 :drtRequests="$options.drtRequests"
                 :traces="$options.traces"
                 :colors="COLOR_OCCUPANCY"
-                :settingsShowLayers="SETTINGS")
+                :settingsShowLayers="SETTINGS"
+                :center="vizDetails.center")
 
 </template>
 
@@ -160,6 +161,7 @@ class VehicleAnimation extends Vue {
     title: '',
     description: '',
     thumbnail: '',
+    center: [6.5, 51.0],
   }
 
   public myState = {
@@ -278,6 +280,7 @@ class VehicleAnimation extends Vue {
         this.myState.subfolder + '/' + this.myState.yamlConfig
       )
       this.vizDetails = YAML.parse(text)
+      if (!this.vizDetails.center) this.vizDetails.center = [14, 52.1]
     } catch (e) {
       console.log('failed')
       // maybe it failed because password?
