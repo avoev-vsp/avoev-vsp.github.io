@@ -192,8 +192,12 @@ class VehicleAnimation extends Vue {
   private pathStart!: crossfilter.Dimension<any, any>
   private pathEnd!: crossfilter.Dimension<any, any>
 
+  private requests!: crossfilter.Crossfilter<any>
+  private requestStart!: crossfilter.Dimension<any, any>
+  private requestEnd!: crossfilter.Dimension<any, any>
+
   // 08:10:00
-  private simulationTime = 8 * 3600 + 10 * 60 + 10
+  private simulationTime = 7 * 3600 // 8 * 3600 + 10 * 60 + 10
 
   private timeElapsedSinceLastFrame = 0
 
@@ -376,10 +380,15 @@ class VehicleAnimation extends Vue {
     this.traceEnd.filter([this.simulationTime, Infinity])
     this.pathStart.filter([0, this.simulationTime])
     this.pathEnd.filter([this.simulationTime, Infinity])
+    this.requestStart.filter([0, this.simulationTime])
+    this.requestEnd.filter([this.simulationTime, Infinity])
+
     //@ts-ignore
     this.$options.paths = this.paths.allFiltered()
     //@ts-ignore
     this.$options.traces = this.traces.allFiltered()
+    //@ts-ignore
+    this.$options.drtRequests = this.requests.allFiltered()
 
     this.setWallClock()
   }
@@ -413,9 +422,6 @@ class VehicleAnimation extends Vue {
 
     const { trips, drtRequests } = await this.loadFiles()
 
-    //@ts-ignore:
-    this.$options.drtRequests = drtRequests
-
     console.log('crossfilter-ing')
 
     this.paths = this.parsePaths(trips)
@@ -425,6 +431,10 @@ class VehicleAnimation extends Vue {
     this.traces = await this.parseJson(trips)
     this.traceStart = this.traces.dimension(d => d.t0)
     this.traceEnd = this.traces.dimension(d => d.t1)
+
+    this.requests = crossfilter(drtRequests)
+    this.requestStart = this.requests.dimension(d => d[0]) // time0
+    this.requestEnd = this.requests.dimension(d => d[5]) // arrival
 
     // wait 1.5sec because safari is horrible
     setTimeout(() => {
@@ -458,16 +468,24 @@ class VehicleAnimation extends Vue {
       this.simulationTime += elapsed * this.speed * 0.06
 
       // filter out all traces that havent started or already finished
-      this.traceStart.filter([0, this.simulationTime])
-      this.traceEnd.filter([this.simulationTime, Infinity])
-      this.pathStart.filter([0, this.simulationTime])
-      this.pathEnd.filter([this.simulationTime, Infinity])
-
-      //@ts-ignore:
-      this.$options.paths = this.paths.allFiltered()
-
-      //@ts-ignore
-      this.$options.traces = this.traces.allFiltered()
+      if (this.SETTINGS.Routen) {
+        this.traceStart.filter([0, this.simulationTime])
+        this.traceEnd.filter([this.simulationTime, Infinity])
+        //@ts-ignore
+        this.$options.traces = this.traces.allFiltered()
+      }
+      if (this.SETTINGS.Fahrzeuge) {
+        this.pathStart.filter([0, this.simulationTime])
+        this.pathEnd.filter([this.simulationTime, Infinity])
+        //@ts-ignore:
+        this.$options.paths = this.paths.allFiltered()
+      }
+      if (this.SETTINGS['DRT Anfragen']) {
+        this.requestStart.filter([0, this.simulationTime])
+        this.requestEnd.filter([this.simulationTime, Infinity])
+        //@ts-ignore
+        this.$options.drtRequests = this.requests.allFiltered()
+      }
 
       this.setWallClock()
       window.requestAnimationFrame(this.animate)
@@ -565,7 +583,6 @@ class VehicleAnimation extends Vue {
         )
         const blobString = blob ? await blobToBinaryString(blob) : null
         let text = await coroutines.run(pako.inflateAsync(blobString, { to: 'string' }))
-
         const json = JSON.parse(text)
 
         trips = json.trips
@@ -576,21 +593,6 @@ class VehicleAnimation extends Vue {
       this.myState.statusMessage = '' + e
     }
     return { trips, drtRequests }
-  }
-
-  private clickedHelp() {
-    console.log('HEEELP!')
-    this.myState.isRunning = false
-    this.showHelp = true
-    this.myState.isShowingHelp = this.showHelp
-  }
-
-  private clickedCloseHelp() {
-    this.showHelp = false
-    this.myState.isShowingHelp = this.showHelp
-    // only show the help once
-    // this.$store.commit('setSawAgentAnimationHelp', true)
-    this.myState.isRunning = true
   }
 
   private toggleLoaded(loaded: boolean) {

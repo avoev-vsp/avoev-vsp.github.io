@@ -86,7 +86,7 @@ function renderTooltip({ hoverInfo }: any) {
 
 export default function Component(props: {
   simulationTime: number
-  paths: any
+  paths: any[]
   drtRequests: any[]
   traces: any[]
   colors: any
@@ -147,7 +147,7 @@ export default function Component(props: {
         getIcon: (d: any) => 'vehicle',
         iconMoving: 'vehicle',
         iconStill: 'diamond',
-        getSize: 32,
+        getSize: 30,
         getColor: theme.vehicleColor,
         opacity: 1.0,
         currentTime: simulationTime,
