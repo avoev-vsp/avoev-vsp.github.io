@@ -69,8 +69,11 @@ import { Route } from 'vue-router'
 import YAML from 'yaml'
 import vuera from 'vuera'
 import crossfilter from 'crossfilter2'
+import { blobToArrayBuffer, blobToBinaryString } from 'blob-util'
+import * as coroutines from 'js-coroutines'
 
 import globalStore from '@/store'
+import pako from '@aftersim/pako'
 import AnimationView from '@/plugins/agent-animation/AnimationView.vue'
 import CollapsiblePanel, { Direction } from '@/components/Collapsible'
 import LegendColors from '@/components/LegendColors'
@@ -550,11 +553,24 @@ class VehicleAnimation extends Vue {
     let drtRequests: any = []
 
     try {
-      const json = await this.myState.fileApi.getFileJson(
-        this.myState.subfolder + '/' + this.vizDetails.drtTrips
-      )
-      trips = json.trips
-      drtRequests = json.drtRequests
+      if (this.vizDetails.drtTrips.endsWith('json')) {
+        const json = await this.myState.fileApi.getFileJson(
+          this.myState.subfolder + '/' + this.vizDetails.drtTrips
+        )
+        trips = json.trips
+        drtRequests = json.drtRequests
+      } else if (this.vizDetails.drtTrips.endsWith('gz')) {
+        const blob = await this.myState.fileApi.getFileBlob(
+          this.myState.subfolder + this.vizDetails.drtTrips
+        )
+        const blobString = blob ? await blobToBinaryString(blob) : null
+        let text = await coroutines.run(pako.inflateAsync(blobString, { to: 'string' }))
+
+        const json = JSON.parse(text)
+
+        trips = json.trips
+        drtRequests = json.drtRequests
+      }
     } catch (e) {
       console.error(e)
       this.myState.statusMessage = '' + e
