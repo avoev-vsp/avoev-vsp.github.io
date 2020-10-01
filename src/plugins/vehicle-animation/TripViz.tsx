@@ -39,9 +39,11 @@ const DEFAULT_THEME = {
   effects: [lightingEffect],
 }
 
+const GLADBECK = [6.9814, 51.57]
+const BERLIN = [52.1, 14]
 const INITIAL_VIEW_STATE = {
-  latitude: 51.57,
-  longitude: 6.98,
+  latitude: GLADBECK[1],
+  longitude: GLADBECK[0],
   zoom: 12,
   pitch: 0,
   minZoom: 2,
@@ -88,7 +90,7 @@ export default function Component(props: {
   simulationTime: number
   paths: any
   drtRequests: any[]
-  traces: any
+  traces: any[]
   colors: any
   settingsShowLayers: { [label: string]: boolean }
 }) {
@@ -137,8 +139,8 @@ export default function Component(props: {
       new MovingIconLayer({
         id: 'Vehicles',
         data: paths,
-        getPath: (d: any) => d.path,
-        getTimestamps: (d: any) => d.timestamps,
+        getPath: (d: any) => [d.p0, d.p1],
+        getTimestamps: (d: any) => [d.t0, d.t1],
         getIcon: (d: any) => 'vehicle',
         iconMoving: 'vehicle',
         iconStill: 'diamond',

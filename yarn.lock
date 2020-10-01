@@ -1550,6 +1550,11 @@
   dependencies:
     "@babel/runtime" "^7.0.0"
 
+"@ranfdev/deepobj@1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@ranfdev/deepobj/-/deepobj-1.0.2.tgz#9dba923578fa24aed3d3961975037b6423a03771"
+  integrity sha512-FM3y6kfJaj5MCoAjdv24EDCTDbuFz+4+pgAunbjYfugwIE4O/xx8mPNji1n/ouG8pHCntSnBr1xwTOensF23Gg==
+
 "@soda/friendly-errors-webpack-plugin@^1.7.1":
   version "1.7.1"
   resolved "https://registry.yarnpkg.com/@soda/friendly-errors-webpack-plugin/-/friendly-errors-webpack-plugin-1.7.1.tgz#706f64bcb4a8b9642b48ae3ace444c70334d615d"
@@ -6154,6 +6159,13 @@ cross-spawn@^7.0.0:
     path-key "^3.1.0"
     shebang-command "^2.0.0"
     which "^2.0.1"
+
+crossfilter2@^1.5.4:
+  version "1.5.4"
+  resolved "https://registry.yarnpkg.com/crossfilter2/-/crossfilter2-1.5.4.tgz#855a11245d9dc18631cd49d88101dc31a2bcffce"
+  integrity sha512-oOGqOM0RocwQFOXJnEaUKqYV6Mc1TNCRv3LrNUa0QlofQTutGAXyQaLW1aGKLls2sfnbwBEtsa6tPD3jY+ycqQ==
+  dependencies:
+    "@ranfdev/deepobj" "1.0.2"
 
 crypto-browserify@^3.11.0:
   version "3.12.0"

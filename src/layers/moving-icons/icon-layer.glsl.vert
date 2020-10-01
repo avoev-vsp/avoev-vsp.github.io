@@ -55,17 +55,20 @@ vec3 interpolate(in vec3 point1, in vec3 point2, in float timestepFraction) {
 void main(void) {
 
   // Calculate progress
+  // (skip everything else if this vertex is outside the time window)
+
   if (currentTime < instanceTimestamps) {
     vPercentComplete = -1.0;
+    return;
+
   } else if (currentTime > instanceTimestampsNext) {
     vPercentComplete = -1.0;
+    return;
+
   } else {
     vPercentComplete = (currentTime - instanceTimestamps) /
                        (instanceTimestampsNext - instanceTimestamps);
   }
-
-  // skip everything else if this vertex is outside the time window
-  if (vPercentComplete == -1.0) return;
 
   geometry.pickingColor = instancePickingColors;
 

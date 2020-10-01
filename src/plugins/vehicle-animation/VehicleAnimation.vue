@@ -67,6 +67,7 @@ import readBlob from 'read-blob'
 import { Route } from 'vue-router'
 import YAML from 'yaml'
 import vuera from 'vuera'
+import crossfilter from 'crossfilter2'
 
 import globalStore from '@/store'
 import AnimationView from '@/plugins/agent-animation/AnimationView.vue'
@@ -177,6 +178,14 @@ class VehicleAnimation extends Vue {
 
   private timeStart = 0
   private timeEnd = 86400
+
+  private traces!: crossfilter.Crossfilter<any>
+  private traceStart!: crossfilter.Dimension<any, any>
+  private traceEnd!: crossfilter.Dimension<any, any>
+
+  private paths!: crossfilter.Crossfilter<any>
+  private pathStart!: crossfilter.Dimension<any, any>
+  private pathEnd!: crossfilter.Dimension<any, any>
 
   // 08:10:00
   private simulationTime = 8 * 3600 + 10 * 60 + 10
@@ -356,8 +365,19 @@ class VehicleAnimation extends Vue {
 
   private setTime(seconds: number) {
     this.simulationTime = seconds
+
+    this.traceStart.filter([0, this.simulationTime])
+    this.traceEnd.filter([this.simulationTime, Infinity])
+    this.pathStart.filter([0, this.simulationTime])
+    this.pathEnd.filter([this.simulationTime, Infinity])
+    //@ts-ignore
+    this.$options.paths = this.paths.allFiltered()
+    //@ts-ignore
+    this.$options.traces = this.traces.allFiltered()
+
     this.setWallClock()
   }
+
   private toggleSimulation() {
     this.myState.isRunning = !this.myState.isRunning
     this.timeElapsedSinceLastFrame = Date.now()
@@ -383,26 +403,46 @@ class VehicleAnimation extends Vue {
     this.generateBreadcrumbs()
     this.updateLegendColors()
 
-    const { paths, drtRequests } = await this.loadFiles()
-
     this.setWallClock()
 
-    //@ts-ignore:
-    this.$options.paths = paths
+    const { trips, drtRequests } = await this.loadFiles()
 
     //@ts-ignore:
     this.$options.drtRequests = drtRequests
 
-    //@ts-ignore:
-    this.$options.traces = await this.parseJson()
+    console.log('crossfilter-ing')
 
-    this.myState.isRunning = true
+    this.paths = this.parsePaths(trips)
+    this.pathStart = this.paths.dimension(d => d.t0)
+    this.pathEnd = this.paths.dimension(d => d.t1)
 
+    this.traces = await this.parseJson(trips)
+    this.traceStart = this.traces.dimension(d => d.t0)
+    this.traceEnd = this.traces.dimension(d => d.t1)
+
+    // wait 1.5sec because safari is horrible
     setTimeout(() => {
+      console.log('GO!')
+      this.myState.isRunning = true
       document.addEventListener('visibilitychange', this.handleVisibilityChange, false)
       this.timeElapsedSinceLastFrame = Date.now()
       this.animate()
     }, 1500)
+  }
+
+  private parsePaths(trips: any[]) {
+    const allTrips: any[] = []
+
+    trips.forEach(trip => {
+      const path = trip.path
+      const timestamps = trip.timestamps
+
+      for (let i = 0; i < trip.path.length - 1; i++) {
+        allTrips.push({ t0: timestamps[i], t1: timestamps[i + 1], p0: path[i], p1: path[i + 1] })
+      }
+    })
+
+    return crossfilter(allTrips)
   }
 
   private animate() {
@@ -410,6 +450,19 @@ class VehicleAnimation extends Vue {
       const elapsed = Date.now() - this.timeElapsedSinceLastFrame
       this.timeElapsedSinceLastFrame += elapsed
       this.simulationTime += elapsed * this.speed * 0.06
+
+      // filter out all traces that havent started or already finished
+      this.traceStart.filter([0, this.simulationTime])
+      this.traceEnd.filter([this.simulationTime, Infinity])
+      this.pathStart.filter([0, this.simulationTime])
+      this.pathEnd.filter([this.simulationTime, Infinity])
+
+      //@ts-ignore:
+      this.$options.paths = this.paths.allFiltered()
+
+      //@ts-ignore
+      this.$options.traces = this.traces.allFiltered()
+
       this.setWallClock()
       window.requestAnimationFrame(this.animate)
     }
@@ -430,13 +483,14 @@ class VehicleAnimation extends Vue {
   }
 
   // convert path/timestamp info into path traces we can use
-  private parseJson() {
+  private parseJson(trips: any[]) {
     let countTraces = 0
-    const traces: any = []
     let countVehicles = 0
 
+    const traces: any = []
+
     //@ts-ignore:
-    this.$options.paths.forEach((vehicle: any) => {
+    trips.forEach((vehicle: any) => {
       countVehicles++
 
       let time = vehicle.timestamps[0]
@@ -477,7 +531,8 @@ class VehicleAnimation extends Vue {
       })
       traces.push(...segments)
     })
-    return traces
+
+    return crossfilter(traces)
   }
 
   private beforeDestroy() {
@@ -488,20 +543,20 @@ class VehicleAnimation extends Vue {
   }
 
   private async loadFiles() {
-    let paths: any = []
+    let trips: any[] = []
     let drtRequests: any = []
 
     try {
       const json = await this.myState.fileApi.getFileJson(
         this.myState.subfolder + '/' + this.vizDetails.drtTrips
       )
-      paths = json.trips
+      trips = json.trips
       drtRequests = json.drtRequests
     } catch (e) {
       console.error(e)
       this.myState.statusMessage = '' + e
     }
-    return { paths, drtRequests }
+    return { trips, drtRequests }
   }
 
   private clickedHelp() {

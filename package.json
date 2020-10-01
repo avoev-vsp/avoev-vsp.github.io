@@ -27,6 +27,7 @@
     "colormap": "^2.3.1",
     "convert-seconds": "^1.0.1",
     "core-js": "^3.6.4",
+    "crossfilter2": "^1.5.4",
     "csvtojson": "^2.0.10",
     "d3-request": "^1.0.6",
     "d3-sankey-diagram": "^0.7.3",
