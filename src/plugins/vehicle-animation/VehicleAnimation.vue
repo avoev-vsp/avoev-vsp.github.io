@@ -145,7 +145,7 @@ class VehicleAnimation extends Vue {
 
   SETTINGS: { [label: string]: boolean } = {
     Fahrzeuge: true,
-    Kurse: true,
+    Routen: true,
     'DRT Anfragen': true,
   }
 

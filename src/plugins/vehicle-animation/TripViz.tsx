@@ -112,11 +112,11 @@ export default function Component(props: {
 
   const allLayers = ['Vehicles', 'Routes', 'DRT Requests']
 
-  if (settingsShowLayers['Kurse'])
+  if (settingsShowLayers['Routen'])
     layers.push(
       //@ts-ignore:
       new PathTraceLayer({
-        id: 'Kurse',
+        id: 'Routen',
         data: traces,
         currentTime: simulationTime,
         getSourcePosition: (d: any) => d.p0,
