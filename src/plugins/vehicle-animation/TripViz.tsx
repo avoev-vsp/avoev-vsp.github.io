@@ -100,7 +100,7 @@ export default function Component(props: {
 
   const theme = DEFAULT_THEME
 
-  const arcWidth = 2
+  const arcWidth = 1
   const [hoverInfo, setHoverInfo] = useState({})
 
   const layers: any = []
@@ -142,7 +142,7 @@ export default function Component(props: {
         getIcon: (d: any) => 'vehicle',
         iconMoving: 'vehicle',
         iconStill: 'diamond',
-        getSize: 42,
+        getSize: 28,
         getColor: theme.vehicleColor,
         opacity: 1.0,
         currentTime: simulationTime,
@@ -172,7 +172,7 @@ export default function Component(props: {
         getSourceColor: [255, 0, 255],
         getTargetColor: [200, 255, 255],
         getWidth: arcWidth,
-        opacity: 0.2,
+        opacity: 0.5,
       })
     )
 

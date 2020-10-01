@@ -16,6 +16,8 @@
     "@deck.gl/layers": "^8.2.7",
     "@deck.gl/mesh-layers": "^8.2.7",
     "@deck.gl/react": "^8.2.7",
+    "@emotion/core": "^10.0.35",
+    "@emotion/styled": "^10.0.27",
     "@luma.gl/constants": "^8.2.0",
     "@math.gl/polygon": "^3.2.2",
     "@statnett/vue-plotly": "^0.3.2",

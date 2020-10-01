@@ -6,32 +6,33 @@
     p.big.day {{ vizDetails.title }}
     p.big.time(v-if="myState.statusMessage") {{ myState.statusMessage }}
 
-  .right-side(v-if="!thumbnail")
+  .right-side(v-if="isLoaded && !thumbnail"
+    :darkMode="true" width="160" :direction="RIGHT")
 
     .big.time.clock(v-if="!myState.statusMessage")
       p {{ myState.clock }}
 
-    .dark-panel(v-if="isLoaded")
+    settings-panel.settings-area(:items="SETTINGS" :onClick="handleSettingChange")
 
-      settings-panel.settings-area(:items="SETTINGS" :onClick="handleSettingChange")
+    legend-colors.legend-block(title="Anfragen:" :items="legendRequests")
 
-      legend-colors.legend-block(title="Anfragen:" :items="legendRequests")
+    legend-colors.legend-block(v-if="legendItems.length"
+      title="Passagiere:" :items="legendItems")
 
-      legend-colors.legend-block(v-if="legendItems.length"
-        title="Passagiere:" :items="legendItems")
+    .speed-block
+      p.speed-label(
+        :style="{'color': textColor.text}") Geschwindigkeit:
+        br
+        | {{ speed }}x
 
-
-      .speed-block
-        p.speed-label(
-          :style="{'color': textColor.text}") Geschwindigkeit: {{ speed }}x
-        vue-slider.speed-slider(v-model="speed"
-          :data="speedStops"
-          :duration="0"
-          :dotSize="20"
-          tooltip="active"
-          tooltip-placement="bottom"
-          :tooltip-formatter="val => val + 'x'"
-        )
+      vue-slider.speed-slider(v-model="speed"
+        :data="speedStops"
+        :duration="0"
+        :dotSize="20"
+        tooltip="active"
+        tooltip-placement="bottom"
+        :tooltip-formatter="val => val + 'x'"
+      )
 
   .bottom-area
 
@@ -58,7 +59,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Watch } from 'vue-property-decorator'
+import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
 import Papaparse from 'papaparse'
 import VueSlider from 'vue-slider-component'
 import { ToggleButton } from 'vue-js-toggle-button'
@@ -69,6 +70,7 @@ import vuera from 'vuera'
 
 import globalStore from '@/store'
 import AnimationView from '@/plugins/agent-animation/AnimationView.vue'
+import CollapsiblePanel, { Direction } from '@/components/Collapsible'
 import LegendColors from '@/components/LegendColors'
 import ModalMarkdownDialog from '@/components/ModalMarkdownDialog.vue'
 import PlaybackControls from './PlaybackControls.vue'
@@ -88,18 +90,12 @@ import {
 import TripViz from '@/plugins/vehicle-animation/TripViz'
 import HTTPFileSystem from '@/util/HTTPFileSystem'
 
-// AnimationView,
-// ModalMarkdownDialog,
-// PlaybackControls,
-// VueSlider,
-// ToggleButton,
-
-import Vue from 'vue'
 import { VuePlugin } from 'vuera'
 Vue.use(VuePlugin)
 
 @Component({
   components: {
+    CollapsiblePanel,
     SettingsPanel,
     LegendColors,
     TripViz,
@@ -120,6 +116,9 @@ class VehicleAnimation extends Vue {
 
   @Prop({ required: false })
   private thumbnail!: boolean
+
+  private RIGHT = Direction.RIGHT
+  private LEFT = Direction.LEFT
 
   private COLOR_OCCUPANCY: any = {
     0: [255, 255, 85],
@@ -367,6 +366,9 @@ class VehicleAnimation extends Vue {
     // start moving. Turns out a 0x speed is not very helpful! Help the user
     // out and switch the speed up if they press play.
     if (this.myState.isRunning && this.speed === 0.0) this.speed = 1.0
+
+    // and begin!
+    if (this.myState.isRunning) this.animate()
   }
 
   private async mounted() {
@@ -400,7 +402,7 @@ class VehicleAnimation extends Vue {
       document.addEventListener('visibilitychange', this.handleVisibilityChange, false)
       this.timeElapsedSinceLastFrame = Date.now()
       this.animate()
-    }, 2000)
+    }, 1500)
   }
 
   private animate() {
@@ -409,8 +411,8 @@ class VehicleAnimation extends Vue {
       this.timeElapsedSinceLastFrame += elapsed
       this.simulationTime += elapsed * this.speed * 0.06
       this.setWallClock()
+      window.requestAnimationFrame(this.animate)
     }
-    window.requestAnimationFrame(this.animate)
   }
 
   private isPausedDueToHiding = false
@@ -545,7 +547,6 @@ export default VehicleAnimation
 <style scoped lang="scss">
 @import '~vue-slider-component/theme/default.css';
 @import '@/styles.scss';
-@import '~react-toggle/style.css';
 
 #v3-app {
   display: grid;
@@ -554,11 +555,12 @@ export default VehicleAnimation
   background-size: cover;
   pointer-events: none;
   grid-template-columns: 1fr min-content;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto 1fr auto;
   grid-template-areas:
-    'hd       rightside'
-    '.        rightside'
-    'playback  playback';
+    'title              .'
+    '.          rightside'
+    '.                  .'
+    'playback    playback';
 }
 
 #v3-app.hide-thumbnail {
@@ -594,7 +596,7 @@ img.theme-button:hover {
 }
 
 .nav {
-  grid-area: hd;
+  grid-area: title;
   display: flex;
   flex-direction: row;
   margin: 0 0;
@@ -617,10 +619,6 @@ img.theme-button:hover {
   }
 }
 
-.dark-panel {
-  background-color: $steelGray; // #000000cc;
-}
-
 .speed-block {
   margin-top: 2rem;
   padding: 0 0.25rem 0 0.5rem;
@@ -635,7 +633,6 @@ img.theme-button:hover {
   flex: 1;
   width: 100%;
   margin: 0rem 0.25rem 0rem 0rem;
-  pointer-events: auto;
   font-weight: bold;
 }
 
@@ -659,14 +656,17 @@ img.theme-button:hover {
 }
 
 .right-side {
+  z-index: 2;
   grid-area: rightside;
-  font-size: 0.8rem;
+  background-color: $steelGray;
+  box-shadow: 0px 0px 12px #111111cc;
+  color: white;
   display: flex;
   flex-direction: column;
-  // margin-right: 1rem;
+  font-size: 0.8rem;
   padding: 0 0;
-  color: white;
-  pointer-events: none;
+  pointer-events: auto;
+  padding-bottom: 0.25rem;
 }
 
 .logo {
@@ -718,7 +718,7 @@ img.theme-button:hover {
   color: white;
   font-size: 0.8rem;
   padding: 0.25rem 0.25rem;
-  margin: 1rem 2rem 0 0;
+  margin: 1rem 0rem 0 0;
 }
 
 .extra-buttons {
@@ -748,12 +748,13 @@ img.theme-button:hover {
 }
 
 .clock {
+  width: 100%;
   background-color: #000000cc;
   border: 3px solid white;
 }
 
 .clock p {
-  margin-left: 0.25rem;
+  text-align: center;
   padding: 5px 10px;
 }
 

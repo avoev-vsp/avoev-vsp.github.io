@@ -70,7 +70,8 @@ export default App
 </script>
 
 <style lang="scss">
-@import '@/styles.scss';
+@import './styles.scss';
+@import './assets/css/react-toggle.style.scss';
 @import '~buefy/dist/buefy.css';
 @import '~mapbox-gl/dist/mapbox-gl.css';
 
