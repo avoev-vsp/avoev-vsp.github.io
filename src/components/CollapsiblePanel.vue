@@ -69,7 +69,7 @@ export default class VueComponent extends Vue {
 }
 
 .xbutton:hover {
-  color: #666;
+  color: yellow;
 }
 
 @media only screen and (max-width: 640px) {

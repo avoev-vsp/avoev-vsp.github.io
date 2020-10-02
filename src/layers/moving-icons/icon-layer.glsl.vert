@@ -24,8 +24,8 @@ uniform vec4 iconStillFrames;
 
 attribute float instanceTimestamps;
 attribute float instanceTimestampsNext;
-attribute vec3 instanceStartPositions;
-attribute vec3 instanceEndPositions;
+attribute vec2 instanceStartPositions;
+attribute vec2 instanceEndPositions;
 
 varying float vColorMode;
 varying vec4 vColor;
@@ -72,6 +72,9 @@ void main(void) {
 
   geometry.pickingColor = instancePickingColors;
 
+  vec3 startPosition = vec3(instanceStartPositions, 0.0);
+  vec3 endPosition = vec3(instanceEndPositions, 0.0);
+
   // are we stationary/still
   bool still = (instanceStartPositions == instanceEndPositions);
 
@@ -89,8 +92,8 @@ void main(void) {
   // figure out angle
   float angle = 0.0;
   if (!still) {
-    vec3 point1 = project_position_to_clipspace(instanceStartPositions, vec3(0.0), vec3(0.0)).xyz;
-    vec3 point2 = project_position_to_clipspace(instanceEndPositions, vec3(0.0), vec3(0.0)).xyz;
+    vec3 point1 = project_position_to_clipspace(startPosition, vec3(0.0), vec3(0.0)).xyz;
+    vec3 point2 = project_position_to_clipspace(endPosition, vec3(0.0), vec3(0.0)).xyz;
     vec3 direction = normalize(point2 - point1);
     angle = atan( direction.y / direction.x);
     if (direction.x < 0.0) angle = angle - PI;
@@ -103,8 +106,8 @@ void main(void) {
   pixelOffset.y *= -1.0;
 
   vec3 newPosition = interpolate(
-    instanceStartPositions,
-    instanceEndPositions,
+    startPosition,
+    endPosition,
     vPercentComplete);
 
   if (billboard)  {

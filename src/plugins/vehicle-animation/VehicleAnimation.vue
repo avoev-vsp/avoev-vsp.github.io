@@ -175,15 +175,15 @@ class VehicleAnimation extends Vue {
   private timeStart = 0
   private timeEnd = 86400
 
-  private traces!: crossfilter.Crossfilter<any>
+  private traces: crossfilter.Crossfilter<any> = crossfilter([])
   private traceStart!: crossfilter.Dimension<any, any>
   private traceEnd!: crossfilter.Dimension<any, any>
 
-  private paths!: crossfilter.Crossfilter<any>
+  private paths: crossfilter.Crossfilter<any> = crossfilter([])
   private pathStart!: crossfilter.Dimension<any, any>
   private pathEnd!: crossfilter.Dimension<any, any>
 
-  private requests!: crossfilter.Crossfilter<any>
+  private requests: crossfilter.Crossfilter<any> = crossfilter([])
   private requestStart!: crossfilter.Dimension<any, any>
   private requestEnd!: crossfilter.Dimension<any, any>
 

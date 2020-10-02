@@ -1,26 +1,6 @@
-// Copyright (c) 2015 - 2017 Uber Technologies, Inc.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
 import { Layer, project32, picking } from '@deck.gl/core'
 import GL from '@luma.gl/constants'
 import { Model, Geometry } from '@luma.gl/core'
-import PathTesselator from './path-tesselator'
 
 import IconManager from './icon-manager'
 
@@ -63,14 +43,16 @@ const defaultProps = {
   noAlloc: true,
   iconStill: { type: 'object', value: null },
 
-  // getPosition: { type: 'accessor', value: (x: any) => x.position },
   getIcon: { type: 'accessor', value: (x: any) => x.icon },
   getColor: { type: 'accessor', value: DEFAULT_COLOR },
   getSize: { type: 'accessor', value: 1 },
   getAngle: { type: 'accessor', value: 0 },
   getPixelOffset: { type: 'accessor', value: [0, 0] },
-  getPath: { type: 'accessor', value: null },
-  getTimestamps: { type: 'accessor', value: null },
+
+  getPathStart: { type: 'accessor', value: null },
+  getPathEnd: { type: 'accessor', value: null },
+  getTimeStart: { type: 'accessor', value: null },
+  getTimeEnd: { type: 'accessor', value: null },
 
   currentTime: { type: 'number', value: 0 },
 }
@@ -86,24 +68,24 @@ export default class IconLayer extends Layer {
     }
 
     const attributeManager = this.getAttributeManager()
+
     /* eslint-disable max-len */
     attributeManager.addInstanced({
       instanceTimestamps: {
         size: 1,
-        accessor: 'getTimestamps',
-        shaderAttributes: {
-          instanceTimestamps: { vertexOffset: 0 },
-          instanceTimestampsNext: { vertexOffset: 1 },
-        },
+        accessor: 'getTimeStart',
       },
-      positions: {
-        size: 3,
-        accessor: 'getPath',
-        update: this.calculatePositions,
-        shaderAttributes: {
-          instanceStartPositions: { vertexOffset: 0 },
-          instanceEndPositions: { vertexOffset: 1 },
-        },
+      instanceTimestampsNext: {
+        size: 1,
+        accessor: 'getTimeEnd',
+      },
+      instanceStartPositions: {
+        size: 2,
+        accessor: 'getPathStart',
+      },
+      instanceEndPositions: {
+        size: 2,
+        accessor: 'getPathEnd',
       },
       instanceSizes: {
         size: 1,
@@ -133,14 +115,8 @@ export default class IconLayer extends Layer {
         accessor: 'getPixelOffset',
       },
     })
-    /* eslint-enable max-len */
-
-    this.setState({
-      pathTesselator: new PathTesselator({}),
-    })
   }
 
-  /* eslint-disable max-statements, complexity */
   updateState({ oldProps, props, changeFlags }: any) {
     super.updateState({ props, oldProps, changeFlags })
 
@@ -174,27 +150,6 @@ export default class IconLayer extends Layer {
       (changeFlags.updateTriggersChanged &&
         (changeFlags.updateTriggersChanged.all || changeFlags.updateTriggersChanged.getIcon))
     ) {
-      const { pathTesselator } = this.state
-      const buffers = data.attributes || {}
-
-      pathTesselator.updateGeometry({
-        data: props.data,
-        geometryBuffer: buffers.getPath,
-        buffers,
-        normalize: !props._pathType,
-        loop: props._pathType === 'loop',
-        getGeometry: props.getPath,
-        positionFormat: props.positionFormat,
-        wrapLongitude: props.wrapLongitude,
-        // TODO - move the flag out of the viewport
-        resolution: this.context.viewport.resolution,
-        dataChanged: changeFlags.dataChanged,
-      })
-      this.setState({
-        numInstances: pathTesselator.instanceCount,
-        startIndices: pathTesselator.vertexStarts,
-      })
-
       iconManager.setProps({ data, getIcon })
       iconMappingChanged = true
     }
@@ -286,13 +241,6 @@ export default class IconLayer extends Layer {
         isInstanced: true,
       })
     )
-  }
-
-  calculatePositions(attribute: any) {
-    const { pathTesselator } = this.state
-
-    attribute.startIndices = pathTesselator.vertexStarts
-    attribute.value = pathTesselator.attributes['positions']
   }
 
   _onUpdate() {

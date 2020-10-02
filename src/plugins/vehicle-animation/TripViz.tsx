@@ -110,8 +110,6 @@ export default function Component(props: {
 
   const layers: any = []
 
-  const allLayers = ['Vehicles', 'Routes', 'DRT Requests']
-
   if (settingsShowLayers['Routen'])
     layers.push(
       //@ts-ignore:
@@ -142,8 +140,10 @@ export default function Component(props: {
       new MovingIconLayer({
         id: 'Vehicles',
         data: paths,
-        getPath: (d: any) => [d.p0, d.p1],
-        getTimestamps: (d: any) => [d.t0, d.t1],
+        getPathStart: (d: any) => d.p0,
+        getPathEnd: (d: any) => d.p1,
+        getTimeStart: (d: any) => d.t0,
+        getTimeEnd: (d: any) => d.t1,
         getIcon: (d: any) => 'vehicle',
         iconMoving: 'vehicle',
         iconStill: 'diamond',
