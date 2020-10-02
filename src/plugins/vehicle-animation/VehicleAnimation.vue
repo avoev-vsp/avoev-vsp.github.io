@@ -6,33 +6,40 @@
     p.big.day {{ vizDetails.title }}
     p.big.time(v-if="myState.statusMessage") {{ myState.statusMessage }}
 
-  .right-side(v-if="isLoaded && !thumbnail"
-    :darkMode="true" width="160" :direction="RIGHT")
+  trip-viz.anim(v-if="!thumbnail" :simulationTime="simulationTime"
+                :paths="$options.paths"
+                :drtRequests="$options.drtRequests"
+                :traces="$options.traces"
+                :colors="COLOR_OCCUPANCY"
+                :settingsShowLayers="SETTINGS"
+                :center="vizDetails.center")
 
-    .big.time.clock(v-if="!myState.statusMessage")
-      p {{ myState.clock }}
+  .right-side(v-if="isLoaded && !thumbnail")
+    collapsible-panel(:darkMode="true" width="170" direction="right")
+      .big.clock(v-if="!myState.statusMessage")
+        p {{ myState.clock }}
 
-    settings-panel.settings-area(:items="SETTINGS" :onClick="handleSettingChange")
+      legend-colors.legend-block(title="Anfragen:" :items="legendRequests")
 
-    legend-colors.legend-block(title="Anfragen:" :items="legendRequests")
+      legend-colors.legend-block(v-if="legendItems.length"
+        title="Passagiere:" :items="legendItems")
 
-    legend-colors.legend-block(v-if="legendItems.length"
-      title="Passagiere:" :items="legendItems")
+      settings-panel.settings-area(:items="SETTINGS" :onClick="handleSettingChange")
 
-    .speed-block
-      p.speed-label(
-        :style="{'color': textColor.text}") Geschwindigkeit:
-        br
-        | {{ speed }}x
+      .speed-block
+        p.speed-label(
+          :style="{color: textColor.text}") Geschwindigkeit:
+          br
+          | {{ speed }}x
 
-      vue-slider.speed-slider(v-model="speed"
-        :data="speedStops"
-        :duration="0"
-        :dotSize="20"
-        tooltip="active"
-        tooltip-placement="bottom"
-        :tooltip-formatter="val => val + 'x'"
-      )
+        vue-slider.speed-slider(v-model="speed"
+          :data="speedStops"
+          :duration="0"
+          :dotSize="20"
+          tooltip="active"
+          tooltip-placement="bottom"
+          :tooltip-formatter="val => val + 'x'"
+        )
 
   .bottom-area
 
@@ -43,19 +50,6 @@
       :timeEnd = "timeEnd"
       :isRunning = "myState.isRunning"
       :currentTime = "simulationTime")
-
-  //- .extra-buttons(v-if="isLoaded")
-  //-   .help-button(@click='clickedHelp' title="info")
-  //-     i.help-button-text.fa.fa-1x.fa-question
-  //-   img.theme-button(src="@/assets/images/darkmode.jpg" @click='rotateColors' title="dark/light theme")
-
-  trip-viz.anim(v-if="!thumbnail" :simulationTime="simulationTime"
-                :paths="$options.paths"
-                :drtRequests="$options.drtRequests"
-                :traces="$options.traces"
-                :colors="COLOR_OCCUPANCY"
-                :settingsShowLayers="SETTINGS"
-                :center="vizDetails.center")
 
 </template>
 
@@ -75,7 +69,7 @@ import * as coroutines from 'js-coroutines'
 import globalStore from '@/store'
 import pako from '@aftersim/pako'
 import AnimationView from '@/plugins/agent-animation/AnimationView.vue'
-import CollapsiblePanel, { Direction } from '@/components/Collapsible'
+import CollapsiblePanel from '@/components/CollapsiblePanel.vue'
 import LegendColors from '@/components/LegendColors'
 import ModalMarkdownDialog from '@/components/ModalMarkdownDialog.vue'
 import PlaybackControls from './PlaybackControls.vue'
@@ -121,9 +115,6 @@ class VehicleAnimation extends Vue {
 
   @Prop({ required: false })
   private thumbnail!: boolean
-
-  private RIGHT = Direction.RIGHT
-  private LEFT = Direction.LEFT
 
   private COLOR_OCCUPANCY: any = {
     0: [255, 255, 85],
@@ -448,7 +439,6 @@ class VehicleAnimation extends Vue {
 
   private parsePaths(trips: any[]) {
     const allTrips: any[] = []
-
     trips.forEach(trip => {
       const path = trip.path
       const timestamps = trip.timestamps
@@ -457,7 +447,6 @@ class VehicleAnimation extends Vue {
         allTrips.push({ t0: timestamps[i], t1: timestamps[i + 1], p0: path[i], p1: path[i + 1] })
       }
     })
-
     return crossfilter(allTrips)
   }
 
@@ -626,10 +615,10 @@ export default VehicleAnimation
 
 #v3-app {
   display: grid;
+  pointer-events: none;
   min-height: 200px;
   background: url('assets/thumbnail.jpg') no-repeat;
   background-size: cover;
-  pointer-events: none;
   grid-template-columns: 1fr min-content;
   grid-template-rows: auto auto 1fr auto;
   grid-template-areas:
@@ -641,34 +630,6 @@ export default VehicleAnimation
 
 #v3-app.hide-thumbnail {
   background: none;
-}
-
-#help-dialog {
-  padding: 2rem 2rem;
-  pointer-events: auto;
-  // z-index: 20;
-}
-
-img.theme-button {
-  opacity: 1;
-  margin: 1rem 0 0.5rem auto;
-  background-color: black;
-  border-radius: 50%;
-  border: 2px solid #648cb4;
-  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.25);
-  width: 3rem;
-  height: 3rem;
-  cursor: pointer;
-  pointer-events: auto;
-}
-
-img.theme-button:hover {
-  border: 2px solid white;
-}
-
-#top-hover-panel img.theme-button:hover {
-  cursor: pointer;
-  background-color: white;
 }
 
 .nav {
@@ -708,7 +669,7 @@ img.theme-button:hover {
 .speed-slider {
   flex: 1;
   width: 100%;
-  margin: 0rem 0.25rem 0rem 0rem;
+  margin: 0rem 0.25rem 0.25rem 0rem;
   font-weight: bold;
 }
 
@@ -720,59 +681,15 @@ img.theme-button:hover {
   font-weight: bold;
 }
 
-.controls {
-  display: flex;
-  flex-direction: row;
-}
-
-.left-side {
-  flex: 1;
-  margin-left: 0.5rem;
-  margin-right: auto;
-}
-
 .right-side {
-  z-index: 2;
   grid-area: rightside;
   background-color: $steelGray;
-  box-shadow: 0px 0px 12px #111111cc;
+  box-shadow: 0px 2px 10px #111111ee;
   color: white;
   display: flex;
   flex-direction: column;
   font-size: 0.8rem;
-  padding: 0 0;
   pointer-events: auto;
-  padding-bottom: 0.25rem;
-}
-
-.logo {
-  flex: 1;
-  margin-top: auto;
-  margin-left: auto;
-  margin-bottom: none;
-}
-
-.help-button {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  color: white;
-  background-color: $themeColor;
-  display: flex;
-  text-align: center;
-  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.25);
-  margin: 0 0 0 auto;
-  cursor: pointer;
-  pointer-events: auto;
-}
-
-.help-button:hover {
-  background-color: #39a8f1;
-  border: 2px solid white;
-}
-
-.help-button-text {
-  margin: auto auto;
 }
 
 .playback-stuff {
@@ -789,18 +706,13 @@ img.theme-button:hover {
 }
 
 .settings-area {
+  z-index: 20;
   pointer-events: auto;
   background-color: $steelGray;
   color: white;
   font-size: 0.8rem;
   padding: 0.25rem 0.25rem;
   margin: 1rem 0rem 0 0;
-}
-
-.extra-buttons {
-  margin-left: auto;
-  margin-right: 1rem;
-  grid-area: extrabuttons;
 }
 
 .anim {
@@ -811,15 +723,8 @@ img.theme-button:hover {
   pointer-events: auto;
 }
 
-.label {
-  margin-right: 1rem;
-  color: white;
-  text-align: left;
-  line-height: 1.1rem;
-  width: min-content;
-}
-
 .speed-label {
+  font-size: 0.9rem;
   font-weight: bold;
 }
 
@@ -838,6 +743,7 @@ img.theme-button:hover {
   padding: 5rem 5rem;
   background-color: #ccc;
 }
+
 @media only screen and (max-width: 640px) {
   .nav {
     padding: 0.5rem 0.5rem;

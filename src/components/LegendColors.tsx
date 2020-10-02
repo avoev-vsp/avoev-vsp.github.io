@@ -22,11 +22,19 @@ export default function Component(props: {
 
   return (
     <div style={{ padding: '0rem 0.25rem' }}>
-      <h4 style={{ textAlign: 'left', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+      <h4
+        style={{
+          color: 'white',
+          textAlign: 'left',
+          fontWeight: 'bold',
+          marginBottom: '0.5rem',
+          fontSize: '0.9rem',
+        }}
+      >
         {props.title}
       </h4>
       <p>{props.description}</p>
-      <ul>{listItems}</ul>
+      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>{listItems}</ul>
     </div>
   )
 }
