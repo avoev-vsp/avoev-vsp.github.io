@@ -43,7 +43,7 @@ const INITIAL_VIEW_STATE = {
   latitude: 52.1,
   longitude: 14,
   zoom: 12,
-  pitch: 0,
+  pitch: 30,
   minZoom: 2,
   maxZoom: 22,
 }

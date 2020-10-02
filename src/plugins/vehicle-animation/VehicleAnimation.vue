@@ -136,8 +136,8 @@ class VehicleAnimation extends Vue {
 
   SETTINGS: { [label: string]: boolean } = {
     Fahrzeuge: true,
-    Routen: true,
-    'DRT Anfragen': true,
+    Routen: false,
+    'DRT Anfragen': false,
   }
 
   private legendItems: LegendItem[] = Object.keys(this.COLOR_OCCUPANCY).map(key => {
@@ -187,8 +187,7 @@ class VehicleAnimation extends Vue {
   private requestStart!: crossfilter.Dimension<any, any>
   private requestEnd!: crossfilter.Dimension<any, any>
 
-  // 08:10:00
-  private simulationTime = 7 * 3600 // 8 * 3600 + 10 * 60 + 10
+  private simulationTime = 6 * 3600 // 8 * 3600 + 10 * 60 + 10
 
   private timeElapsedSinceLastFrame = 0
 
@@ -411,35 +410,47 @@ class VehicleAnimation extends Vue {
 
     this.setWallClock()
 
+    this.myState.statusMessage = '/ Dateien laden...'
+    console.log('loading files')
     const { trips, drtRequests } = await this.loadFiles()
 
-    console.log('crossfilter-ing')
-
-    this.paths = this.parsePaths(trips)
+    console.log('parsing vehicle motion')
+    this.myState.statusMessage = '/ Standorte berechnen...'
+    this.paths = await this.parsePaths(trips)
     this.pathStart = this.paths.dimension(d => d.t0)
     this.pathEnd = this.paths.dimension(d => d.t1)
 
+    console.log('Routen verarbeiten...')
+    this.myState.statusMessage = '/ Routen verarbeiten...'
     this.traces = await this.parseJson(trips)
     this.traceStart = this.traces.dimension(d => d.t0)
     this.traceEnd = this.traces.dimension(d => d.t1)
 
+    console.log('Anfragen sortieren...')
+    this.myState.statusMessage = '/ Anfragen...'
     this.requests = crossfilter(drtRequests)
     this.requestStart = this.requests.dimension(d => d[0]) // time0
     this.requestEnd = this.requests.dimension(d => d[5]) // arrival
 
-    // wait 1.5sec because safari is horrible
-    setTimeout(() => {
-      console.log('GO!')
-      this.myState.isRunning = true
-      document.addEventListener('visibilitychange', this.handleVisibilityChange, false)
-      this.timeElapsedSinceLastFrame = Date.now()
-      this.animate()
-    }, 1500)
+    console.log('GO!')
+    this.myState.statusMessage = ''
+
+    document.addEventListener('visibilitychange', this.handleVisibilityChange, false)
+
+    this.myState.isRunning = true
+    this.timeElapsedSinceLastFrame = Date.now()
+    this.animate()
+
+    // // wait 1.5sec because safari is horrible
+    // setTimeout(() => {
+    //   console.log('GO!')
+    // }, 1500)
   }
 
-  private parsePaths(trips: any[]) {
+  private async parsePaths(trips: any[]) {
     const allTrips: any[] = []
-    trips.forEach(trip => {
+
+    await coroutines.forEachAsync(trips, (trip: any) => {
       const path = trip.path
       const timestamps = trip.timestamps
 
@@ -496,14 +507,13 @@ class VehicleAnimation extends Vue {
   }
 
   // convert path/timestamp info into path traces we can use
-  private parseJson(trips: any[]) {
+  private async parseJson(trips: any[]) {
     let countTraces = 0
     let countVehicles = 0
 
     const traces: any = []
 
-    //@ts-ignore:
-    trips.forEach((vehicle: any) => {
+    await coroutines.forEachAsync(trips, (vehicle: any) => {
       countVehicles++
 
       let time = vehicle.timestamps[0]
