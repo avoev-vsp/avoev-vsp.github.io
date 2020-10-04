@@ -204,6 +204,7 @@ class VehicleAnimation extends Vue {
   private handleSettingChange(label: string) {
     console.log(label)
     this.SETTINGS[label] = !this.SETTINGS[label]
+    this.updateDatasetFilters()
   }
 
   // this happens if viz is the full page, not a thumbnail on a project page
@@ -461,32 +462,35 @@ class VehicleAnimation extends Vue {
     return crossfilter(allTrips)
   }
 
+  private updateDatasetFilters() {
+    // filter out all traces that havent started or already finished
+    if (this.SETTINGS.Routen) {
+      this.traceStart.filter([0, this.simulationTime])
+      this.traceEnd.filter([this.simulationTime, Infinity])
+      //@ts-ignore
+      this.$options.traces = this.traces.allFiltered()
+    }
+    if (this.SETTINGS.Fahrzeuge) {
+      this.pathStart.filter([0, this.simulationTime])
+      this.pathEnd.filter([this.simulationTime, Infinity])
+      //@ts-ignore:
+      this.$options.paths = this.paths.allFiltered()
+    }
+    if (this.SETTINGS['DRT Anfragen']) {
+      this.requestStart.filter([0, this.simulationTime])
+      this.requestEnd.filter([this.simulationTime, Infinity])
+      //@ts-ignore
+      this.$options.drtRequests = this.requests.allFiltered()
+    }
+  }
+
   private animate() {
     if (this.myState.isRunning) {
       const elapsed = Date.now() - this.timeElapsedSinceLastFrame
       this.timeElapsedSinceLastFrame += elapsed
       this.simulationTime += elapsed * this.speed * 0.06
 
-      // filter out all traces that havent started or already finished
-      if (this.SETTINGS.Routen) {
-        this.traceStart.filter([0, this.simulationTime])
-        this.traceEnd.filter([this.simulationTime, Infinity])
-        //@ts-ignore
-        this.$options.traces = this.traces.allFiltered()
-      }
-      if (this.SETTINGS.Fahrzeuge) {
-        this.pathStart.filter([0, this.simulationTime])
-        this.pathEnd.filter([this.simulationTime, Infinity])
-        //@ts-ignore:
-        this.$options.paths = this.paths.allFiltered()
-      }
-      if (this.SETTINGS['DRT Anfragen']) {
-        this.requestStart.filter([0, this.simulationTime])
-        this.requestEnd.filter([this.simulationTime, Infinity])
-        //@ts-ignore
-        this.$options.drtRequests = this.requests.allFiltered()
-      }
-
+      this.updateDatasetFilters()
       this.setWallClock()
       window.requestAnimationFrame(this.animate)
     }
