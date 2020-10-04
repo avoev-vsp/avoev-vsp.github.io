@@ -24,7 +24,7 @@
       legend-colors.legend-block(v-if="legendItems.length"
         title="Passagiere:" :items="legendItems")
 
-      settings-panel.settings-area(:items="SETTINGS" :onClick="handleSettingChange")
+      settings-panel.settings-area(:items="SETTINGS" @click="handleSettingChange")
 
       .speed-block
         p.speed-label(
@@ -73,7 +73,7 @@ import CollapsiblePanel from '@/components/CollapsiblePanel.vue'
 import LegendColors from '@/components/LegendColors'
 import ModalMarkdownDialog from '@/components/ModalMarkdownDialog.vue'
 import PlaybackControls from './PlaybackControls.vue'
-import SettingsPanel from '@/components/SettingsPanel'
+import SettingsPanel from '@/components/SettingsPanel.vue'
 
 import {
   ColorScheme,

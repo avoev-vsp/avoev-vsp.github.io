@@ -50,7 +50,6 @@
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-map-gl": "^5.2.7",
-    "react-toggle": "^4.1.1",
     "read-blob": "^1.1.0",
     "shapefile": "^0.6.6",
     "three": "^0.115.0",
