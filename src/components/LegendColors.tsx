@@ -28,7 +28,7 @@ export default function Component(props: {
           textAlign: 'left',
           fontWeight: 'bold',
           marginBottom: '0.5rem',
-          fontSize: '0.9rem',
+          fontSize: '0.8rem',
         }}
       >
         {props.title}

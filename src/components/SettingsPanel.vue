@@ -1,5 +1,5 @@
 <template lang="pug">
-#settings-panel-content
+.settings-panel-content
   h4 Ein-/Ausblenden
 
   .row(:key="label" v-for="label in Object.keys(items)")
@@ -29,14 +29,14 @@ export default class VueComponent extends Vue {
 </script>
 
 <style scoped lang="scss">
-#settings-panel-content {
+.settings-panel-content {
   margin: 2rem 0.25rem 0 0.25rem;
 }
 
 h4 {
   text-align: 'right';
   font-weight: 'bold';
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   margin-bottom: 0.5rem;
   color: white;
 }

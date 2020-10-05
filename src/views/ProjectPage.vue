@@ -210,8 +210,8 @@ export default class VueComponent extends Vue {
     this.generateBreadcrumbs()
 
     // this happens async
+    await this.loadYaml()
     this.fetchFolderContents()
-    this.loadYaml()
   }
 
   @Watch('globalState.authAttempts') authenticationChanged() {

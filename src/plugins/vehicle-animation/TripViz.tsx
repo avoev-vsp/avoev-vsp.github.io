@@ -42,8 +42,8 @@ const DEFAULT_THEME = {
 const INITIAL_VIEW_STATE = {
   latitude: 52.1,
   longitude: 14,
-  zoom: 12,
-  pitch: 30,
+  zoom: 10,
+  pitch: 20,
   minZoom: 2,
   maxZoom: 22,
 }
@@ -57,33 +57,6 @@ const DRT_REQUEST = {
   arrival: 5,
 }
 
-function renderTooltip({ hoverInfo }: any) {
-  const { object, x, y } = hoverInfo
-
-  if (!object) {
-    return null
-  }
-
-  return (
-    <div
-      className="tooltip"
-      style={{
-        backgroundColor: '#000000d4  ',
-        borderLeft: '6px solid white',
-        boxShadow: '2.5px 2px 4px rgba(0,0,0,0.25)',
-        color: '#ddd',
-        padding: '1rem 1rem',
-        position: 'absolute',
-        left: x + 40,
-        top: y - 30,
-      }}
-    >
-      <big>Taxi: {object.veh}</big>
-      <div>Passagiere: {object.occ} </div>
-    </div>
-  )
-}
-
 export default function Component(props: {
   simulationTime: number
   paths: any[]
@@ -92,12 +65,21 @@ export default function Component(props: {
   colors: any
   center: [number, number]
   settingsShowLayers: { [label: string]: boolean }
+  vehicleLookup: string[]
 }) {
   const mapStyle = 'mapbox://styles/vsp-tu-berlin/ckek59op0011219pbwfar1rex'
   // const mapStyle = 'mapbox://styles/vsp-tu-berlin/ckeetelh218ef19ob5nzw5vbh'
   // mapStyle = "mapbox://styles/mapbox/dark-v10",
 
-  const { simulationTime, paths, traces, drtRequests, settingsShowLayers, center } = props
+  const {
+    simulationTime,
+    paths,
+    traces,
+    drtRequests,
+    settingsShowLayers,
+    center,
+    vehicleLookup,
+  } = props
 
   const theme = DEFAULT_THEME
 
@@ -109,6 +91,38 @@ export default function Component(props: {
   const [hoverInfo, setHoverInfo] = useState({})
 
   const layers: any = []
+
+  function renderTooltip({ hoverInfo }: any) {
+    const { object, x, y } = hoverInfo
+
+    if (!object) {
+      return null
+    }
+
+    const vehicleId = vehicleLookup[object.v]
+
+    return (
+      <div
+        className="tooltip"
+        style={{
+          fontSize: '0.8rem',
+          backgroundColor: '#ddddeedd',
+          borderLeft: '6px solid green',
+          boxShadow: '2.5px 2px 4px rgba(0,0,0,0.25)',
+          color: '#223',
+          padding: '1rem 1rem',
+          position: 'absolute',
+          left: x + 40,
+          top: y - 30,
+        }}
+      >
+        <big>
+          <b>Taxi: {vehicleId}</b>
+        </big>
+        <div>Passagiere: {object.occ} </div>
+      </div>
+    )
+  }
 
   if (settingsShowLayers['Routen'])
     layers.push(
@@ -147,7 +161,7 @@ export default function Component(props: {
         getIcon: (d: any) => 'vehicle',
         iconMoving: 'vehicle',
         iconStill: 'diamond',
-        getSize: 30,
+        getSize: 36,
         getColor: theme.vehicleColor,
         opacity: 1.0,
         currentTime: simulationTime,

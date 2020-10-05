@@ -3,7 +3,7 @@
         :style='{"background": urlThumbnail}' oncontextmenu="return false")
 
   .nav(v-if="!thumbnail")
-    p.big.day {{ vizDetails.title }}
+    p.big.xtitle {{ vizDetails.title }}
     p.big.time(v-if="myState.statusMessage") {{ myState.statusMessage }}
 
   trip-viz.anim(v-if="!thumbnail" :simulationTime="simulationTime"
@@ -12,10 +12,11 @@
                 :traces="$options.traces"
                 :colors="COLOR_OCCUPANCY"
                 :settingsShowLayers="SETTINGS"
-                :center="vizDetails.center")
+                :center="vizDetails.center"
+                :vehicleLookup = "vehicleLookup")
 
   .right-side(v-if="isLoaded && !thumbnail")
-    collapsible-panel(:darkMode="true" width="170" direction="right")
+    collapsible-panel(:darkMode="true" width="150" direction="right")
       .big.clock(v-if="!myState.statusMessage")
         p {{ myState.clock }}
 
@@ -121,7 +122,7 @@ class VehicleAnimation extends Vue {
     1: [32, 96, 255],
     2: [85, 255, 85],
     3: [255, 85, 85],
-    4: [200, 0, 0],
+    // 4: [200, 0, 0],
     // 5: [255, 150, 255],
   }
 
@@ -201,10 +202,11 @@ class VehicleAnimation extends Vue {
 
   private legendBits: any[] = []
 
-  private handleSettingChange(label: string) {
+  private async handleSettingChange(label: string) {
     console.log(label)
     this.SETTINGS[label] = !this.SETTINGS[label]
     this.updateDatasetFilters()
+    this.simulationTime += 1 // this will force a redraw
   }
 
   // this happens if viz is the full page, not a thumbnail on a project page
@@ -417,13 +419,13 @@ class VehicleAnimation extends Vue {
 
     console.log('parsing vehicle motion')
     this.myState.statusMessage = '/ Standorte berechnen...'
-    this.paths = await this.parsePaths(trips)
+    this.paths = await this.parseVehicles(trips)
     this.pathStart = this.paths.dimension(d => d.t0)
     this.pathEnd = this.paths.dimension(d => d.t1)
 
     console.log('Routen verarbeiten...')
     this.myState.statusMessage = '/ Routen verarbeiten...'
-    this.traces = await this.parseJson(trips)
+    this.traces = await this.parseRouteTraces(trips)
     this.traceStart = this.traces.dimension(d => d.t0)
     this.traceEnd = this.traces.dimension(d => d.t1)
 
@@ -441,22 +443,30 @@ class VehicleAnimation extends Vue {
     this.myState.isRunning = true
     this.timeElapsedSinceLastFrame = Date.now()
     this.animate()
-
-    // // wait 1.5sec because safari is horrible
-    // setTimeout(() => {
-    //   console.log('GO!')
-    // }, 1500)
   }
 
-  private async parsePaths(trips: any[]) {
+  private vehicleLookup: Uint32Array[] = []
+
+  private async parseVehicles(trips: any[]) {
     const allTrips: any[] = []
+    let vehNumber = -1
 
     await coroutines.forEachAsync(trips, (trip: any) => {
       const path = trip.path
       const timestamps = trip.timestamps
 
+      // attache vehicle ID to each segment so we can click
+      vehNumber++
+      this.vehicleLookup[vehNumber] = trip.id
+
       for (let i = 0; i < trip.path.length - 1; i++) {
-        allTrips.push({ t0: timestamps[i], t1: timestamps[i + 1], p0: path[i], p1: path[i + 1] })
+        allTrips.push({
+          t0: timestamps[i],
+          t1: timestamps[i + 1],
+          p0: path[i],
+          p1: path[i + 1],
+          v: vehNumber,
+        })
       }
     })
     return crossfilter(allTrips)
@@ -511,14 +521,14 @@ class VehicleAnimation extends Vue {
   }
 
   // convert path/timestamp info into path traces we can use
-  private async parseJson(trips: any[]) {
+  private async parseRouteTraces(trips: any[]) {
     let countTraces = 0
-    let countVehicles = 0
+    let vehNumber = -1
 
     const traces: any = []
 
     await coroutines.forEachAsync(trips, (vehicle: any) => {
-      countVehicles++
+      vehNumber++
 
       let time = vehicle.timestamps[0]
       let nextTime = vehicle.timestamps[0]
@@ -546,7 +556,7 @@ class VehicleAnimation extends Vue {
             t0: time,
             p0: vehicle.path[i - 1],
             p1: vehicle.path[i],
-            veh: countVehicles,
+            v: vehNumber,
             occ: vehicle.passengers[i - 1],
           })
         }
@@ -738,7 +748,7 @@ export default VehicleAnimation
 }
 
 .speed-label {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: bold;
 }
 

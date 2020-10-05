@@ -23,6 +23,7 @@
     p Mehr Info über VSP:
       a(href="https://www.vsp.tu-berlin.de") &nbsp;https://vsp.tu-berlin.de
     p GDPR: keine persönlichen Informationen gesammelt oder übertragen.
+
 </template>
 
 <script lang="ts">

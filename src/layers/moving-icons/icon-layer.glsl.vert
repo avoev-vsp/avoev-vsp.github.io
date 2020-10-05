@@ -72,8 +72,8 @@ void main(void) {
 
   geometry.pickingColor = instancePickingColors;
 
-  vec3 startPosition = vec3(instanceStartPositions, 0.0);
-  vec3 endPosition = vec3(instanceEndPositions, 0.0);
+  vec3 startPosition = vec3(instanceStartPositions, 5.0);
+  vec3 endPosition = vec3(instanceEndPositions, 5.0);
 
   // are we stationary/still
   bool still = (instanceStartPositions == instanceEndPositions);
