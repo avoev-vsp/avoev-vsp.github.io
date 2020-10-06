@@ -164,7 +164,7 @@ export default function Component(props: {
         getIcon: (d: any) => 'vehicle',
         iconMoving: 'vehicle',
         iconStill: 'diamond',
-        getSize: 36,
+        getSize: searchEnabled ? 48 : 36,
         getColor: theme.vehicleColor,
         opacity: 1.0,
         currentTime: simulationTime,

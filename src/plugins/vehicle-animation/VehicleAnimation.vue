@@ -29,6 +29,7 @@
 
         .search-panel
           p.speed-label(:style="{margin: '1rem 0 0 0', color: textColor.text}") Search:
+          form(autocomplete="off")
           .field
             p.control.has-icons-left
               input.input.is-small(type="email" placeholder="Search..." v-model="searchTerm")
@@ -132,7 +133,7 @@ class VehicleAnimation extends Vue {
     1: [32, 96, 255],
     2: [85, 255, 85],
     3: [255, 85, 85],
-    // 4: [200, 0, 0],
+    4: [200, 0, 0],
     // 5: [255, 150, 255],
   }
 
@@ -339,22 +340,23 @@ class VehicleAnimation extends Vue {
   }
 
   @Watch('searchTerm') private handleSearch() {
+    console.log('handlesearch')
     if (!this.searchTerm) {
-      this.pathVehicle.filterAll()
-      this.traceVehicle.filterAll()
+      this.pathVehicle?.filterAll()
+      this.traceVehicle?.filterAll()
       this.searchEnabled = false
     } else {
       // this is not efficient but we have an array, soo....
       const vehicleNumber = this.vehicleLookup.findIndex(v => v === this.searchTerm)
       if (vehicleNumber > -1) {
         console.log('vehicle', vehicleNumber)
-        this.pathVehicle.filterExact(vehicleNumber)
-        this.traceVehicle.filterExact(vehicleNumber)
+        this.pathVehicle?.filterExact(vehicleNumber)
+        this.traceVehicle?.filterExact(vehicleNumber)
         this.searchEnabled = true
       } else {
         console.log('nope')
-        this.pathVehicle.filterAll()
-        this.traceVehicle.filterAll()
+        this.pathVehicle?.filterAll()
+        this.traceVehicle?.filterAll()
         this.searchEnabled = false
       }
     }
@@ -408,13 +410,17 @@ class VehicleAnimation extends Vue {
     this.simulationTime = seconds
     this.setWallClock()
 
+    // only filter if search is disabled and we have data loaded already
     if (this.traceStart && this.pathStart && this.requestStart) {
-      this.traceStart.filter([0, this.simulationTime])
-      this.traceEnd.filter([this.simulationTime, Infinity])
       this.pathStart.filter([0, this.simulationTime])
       this.pathEnd.filter([this.simulationTime, Infinity])
       this.requestStart.filter([0, this.simulationTime])
       this.requestEnd.filter([this.simulationTime, Infinity])
+      // only scrub vehicles if search is disabled
+      if (!this.searchEnabled) {
+        this.traceStart.filter([0, this.simulationTime])
+        this.traceEnd.filter([this.simulationTime, Infinity])
+      }
     }
 
     //@ts-ignore
