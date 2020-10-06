@@ -55,6 +55,7 @@ const defaultProps = {
   getTimeEnd: { type: 'accessor', value: null },
 
   currentTime: { type: 'number', value: 0 },
+  pickable: { type: 'boolean', value: true },
 }
 
 export default class IconLayer extends Layer {
@@ -191,6 +192,7 @@ export default class IconLayer extends Layer {
       alphaCutoff,
       currentTime,
       iconStill,
+      pickable,
     } = this.props
 
     const { iconManager } = this.state
@@ -209,6 +211,7 @@ export default class IconLayer extends Layer {
             billboard,
             alphaCutoff,
             currentTime,
+            pickable,
             iconStillOffsets: this.getInstanceOffset(iconStill),
             iconStillColorModes: this.getInstanceColorMode(iconStill),
             iconStillFrames: this.getInstanceIconFrame(iconStill),

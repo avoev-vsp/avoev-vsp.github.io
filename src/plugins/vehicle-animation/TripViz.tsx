@@ -43,7 +43,7 @@ const INITIAL_VIEW_STATE = {
   latitude: 52.1,
   longitude: 14,
   zoom: 10,
-  pitch: 20,
+  pitch: 0,
   minZoom: 2,
   maxZoom: 22,
 }
@@ -67,6 +67,7 @@ export default function Component(props: {
   settingsShowLayers: { [label: string]: boolean }
   vehicleLookup: string[]
   searchEnabled: boolean
+  onClick: any
 }) {
   const mapStyle = 'mapbox://styles/vsp-tu-berlin/ckek59op0011219pbwfar1rex'
   // const mapStyle = 'mapbox://styles/vsp-tu-berlin/ckeetelh218ef19ob5nzw5vbh'
@@ -81,6 +82,7 @@ export default function Component(props: {
     center,
     vehicleLookup,
     searchEnabled,
+    onClick,
   } = props
 
   const theme = DEFAULT_THEME
@@ -90,9 +92,14 @@ export default function Component(props: {
   initialView.longitude = center[0]
 
   const arcWidth = 1
-  const [hoverInfo, setHoverInfo] = useState({})
+  const [hoverInfo, setHoverInfo] = useState({} as any)
 
   const layers: any = []
+
+  function handleClick() {
+    if (!hoverInfo.object) return
+    onClick(hoverInfo.object.v)
+  }
 
   function renderTooltip({ hoverInfo }: any) {
     const { object, x, y } = hoverInfo
@@ -121,7 +128,7 @@ export default function Component(props: {
         <big>
           <b>Taxi: {vehicleId}</b>
         </big>
-        <div>Passagiere: {object.occ} </div>
+        {object.occ && <div>Passagiere: {object.occ} </div>}
       </div>
     )
   }
@@ -177,6 +184,8 @@ export default function Component(props: {
         pickable: true,
         autoHighlight: true,
         highlightColor: [255, 0, 255],
+        onHover: setHoverInfo,
+        onClick: handleClick,
       })
     )
 

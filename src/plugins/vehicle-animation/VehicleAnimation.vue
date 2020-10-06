@@ -14,7 +14,8 @@
                 :settingsShowLayers="SETTINGS"
                 :center="vizDetails.center"
                 :searchEnabled="searchEnabled"
-                :vehicleLookup = "vehicleLookup")
+                :vehicleLookup = "vehicleLookup"
+                :onClick = "handleClick")
 
   .right-side(v-if="isLoaded && !thumbnail")
     collapsible-panel(:darkMode="true" width="150" direction="right")
@@ -340,7 +341,6 @@ class VehicleAnimation extends Vue {
   }
 
   @Watch('searchTerm') private handleSearch() {
-    console.log('handlesearch')
     if (!this.searchTerm) {
       this.pathVehicle?.filterAll()
       this.traceVehicle?.filterAll()
@@ -361,6 +361,15 @@ class VehicleAnimation extends Vue {
       }
     }
     this.updateDatasetFilters()
+  }
+
+  private handleClick(vehicleNumber: number) {
+    console.log('GOT YOU!', vehicleNumber, this.vehicleLookup[vehicleNumber])
+    const vehId = this.vehicleLookup[vehicleNumber]
+
+    // set -- or clear -- search box!
+    if (this.searchTerm === vehId) this.searchTerm = ''
+    else this.searchTerm = vehId
   }
 
   private arrayBufferToBase64(buffer: any) {
