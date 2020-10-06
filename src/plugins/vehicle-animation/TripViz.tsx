@@ -66,6 +66,7 @@ export default function Component(props: {
   center: [number, number]
   settingsShowLayers: { [label: string]: boolean }
   vehicleLookup: string[]
+  searchEnabled: boolean
 }) {
   const mapStyle = 'mapbox://styles/vsp-tu-berlin/ckek59op0011219pbwfar1rex'
   // const mapStyle = 'mapbox://styles/vsp-tu-berlin/ckeetelh218ef19ob5nzw5vbh'
@@ -79,6 +80,7 @@ export default function Component(props: {
     settingsShowLayers,
     center,
     vehicleLookup,
+    searchEnabled,
   } = props
 
   const theme = DEFAULT_THEME
@@ -141,6 +143,7 @@ export default function Component(props: {
         widthMinPixels: 2,
         rounded: false,
         shadowEnabled: false,
+        searchFlag: searchEnabled ? 1.0 : 0.0,
         pickable: true,
         autoHighlight: true,
         highlightColor: [255, 0, 255],

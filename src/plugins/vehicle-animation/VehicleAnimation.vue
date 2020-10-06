@@ -13,6 +13,7 @@
                 :colors="COLOR_OCCUPANCY"
                 :settingsShowLayers="SETTINGS"
                 :center="vizDetails.center"
+                :searchEnabled="searchEnabled"
                 :vehicleLookup = "vehicleLookup")
 
   .right-side(v-if="isLoaded && !thumbnail")
@@ -204,6 +205,7 @@ class VehicleAnimation extends Vue {
   private timeElapsedSinceLastFrame = 0
 
   private searchTerm: string = ''
+  private searchEnabled = false
 
   private globalState = globalStore.state
   private isDarkMode = this.myState.colorScheme === ColorScheme.DarkMode
@@ -340,6 +342,7 @@ class VehicleAnimation extends Vue {
     if (!this.searchTerm) {
       this.pathVehicle.filterAll()
       this.traceVehicle.filterAll()
+      this.searchEnabled = false
     } else {
       // this is not efficient but we have an array, soo....
       const vehicleNumber = this.vehicleLookup.findIndex(v => v === this.searchTerm)
@@ -347,16 +350,15 @@ class VehicleAnimation extends Vue {
         console.log('vehicle', vehicleNumber)
         this.pathVehicle.filterExact(vehicleNumber)
         this.traceVehicle.filterExact(vehicleNumber)
+        this.searchEnabled = true
       } else {
         console.log('nope')
         this.pathVehicle.filterAll()
         this.traceVehicle.filterAll()
+        this.searchEnabled = false
       }
     }
-    //@ts-ignore
-    this.$options.paths = this.paths.allFiltered()
-    //@ts-ignore
-    this.$options.traces = this.traces.allFiltered()
+    this.updateDatasetFilters()
   }
 
   private arrayBufferToBase64(buffer: any) {
@@ -406,14 +408,14 @@ class VehicleAnimation extends Vue {
     this.simulationTime = seconds
     this.setWallClock()
 
-    if (!this.traceStart || !this.pathStart || !this.requestStart) return
-
-    this.traceStart.filter([0, this.simulationTime])
-    this.traceEnd.filter([this.simulationTime, Infinity])
-    this.pathStart.filter([0, this.simulationTime])
-    this.pathEnd.filter([this.simulationTime, Infinity])
-    this.requestStart.filter([0, this.simulationTime])
-    this.requestEnd.filter([this.simulationTime, Infinity])
+    if (this.traceStart && this.pathStart && this.requestStart) {
+      this.traceStart.filter([0, this.simulationTime])
+      this.traceEnd.filter([this.simulationTime, Infinity])
+      this.pathStart.filter([0, this.simulationTime])
+      this.pathEnd.filter([this.simulationTime, Infinity])
+      this.requestStart.filter([0, this.simulationTime])
+      this.requestEnd.filter([this.simulationTime, Infinity])
+    }
 
     //@ts-ignore
     this.$options.paths = this.paths.allFiltered()
@@ -517,8 +519,13 @@ class VehicleAnimation extends Vue {
 
     // filter out all traces that havent started or already finished
     if (this.SETTINGS.Routen) {
-      this.traceStart.filter([0, this.simulationTime])
-      this.traceEnd.filter([this.simulationTime, Infinity])
+      if (this.searchEnabled) {
+        this.traceStart.filterAll()
+        this.traceEnd.filterAll()
+      } else {
+        this.traceStart.filter([0, this.simulationTime])
+        this.traceEnd.filter([this.simulationTime, Infinity])
+      }
       //@ts-ignore
       this.$options.traces = this.traces.allFiltered()
     }

@@ -4,6 +4,7 @@ const defaultProps = {
   currentTime: { type: 'number', value: 0, min: 0 },
   getTimeStart: { type: 'accessor', value: null },
   getTimeEnd: { type: 'accessor', value: null },
+  searchFlag: { type: 'number', value: 0 },
 }
 
 export default class PathTraceLayer extends LineLayer {
@@ -15,10 +16,13 @@ export default class PathTraceLayer extends LineLayer {
         attribute float timeStart;
         attribute float timeEnd;
         uniform float currentTime;
+        uniform float searchFlag;
         varying float vTime;
       `,
       'vs:#main-start': `\
-        if(timeStart > currentTime || timeEnd < currentTime ) {
+        if (searchFlag == 1.0) {
+          vTime = 999.0;
+        } else if(timeStart > currentTime || timeEnd < currentTime ) {
           vTime = -1.0;
           return;
         } else {
@@ -30,13 +34,14 @@ export default class PathTraceLayer extends LineLayer {
       'fs:#decl': `\
         uniform float currentTime;
         varying float vTime;
+        uniform float searchFlag;
       `,
       'fs:#main-start': `\
-        if ( vTime == -1.0 ) discard;
+        if (searchFlag == 0.0 && vTime == -1.0 ) discard;
       `,
       // fade the traces in and out
       'fs:DECKGL_FILTER_COLOR': `\
-        if (vTime <= 10.0) color.a *= (vTime / 10.0);
+        if (searchFlag == 0.0 && vTime <= 10.0) color.a *= (vTime / 10.0);
       `,
     }
     return shaders
@@ -53,10 +58,11 @@ export default class PathTraceLayer extends LineLayer {
   }
 
   draw(params: any) {
-    const { currentTime } = this.props
+    const { currentTime, searchFlag } = this.props
 
     params.uniforms = Object.assign({}, params.uniforms, {
       currentTime,
+      searchFlag,
     })
 
     super.draw(params)
