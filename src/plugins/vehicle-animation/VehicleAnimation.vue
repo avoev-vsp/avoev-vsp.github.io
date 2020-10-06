@@ -17,30 +17,39 @@
 
   .right-side(v-if="isLoaded && !thumbnail")
     collapsible-panel(:darkMode="true" width="150" direction="right")
-      .big.clock(v-if="!myState.statusMessage")
+      .big.clock
         p {{ myState.clock }}
 
-      legend-colors.legend-block(title="Anfragen:" :items="legendRequests")
+      .panel-items
+        legend-colors.legend-block(title="Anfragen:" :items="legendRequests")
 
-      legend-colors.legend-block(v-if="legendItems.length"
-        title="Passagiere:" :items="legendItems")
+        legend-colors.legend-block(v-if="legendItems.length"
+          title="Passagiere:" :items="legendItems")
 
-      settings-panel.settings-area(:items="SETTINGS" @click="handleSettingChange")
+        .search-panel
+          p.speed-label(:style="{margin: '1rem 0 0 0', color: textColor.text}") Search:
+          .field
+            p.control.has-icons-left
+              input.input.is-small(type="email" placeholder="Search..." v-model="searchTerm")
+              span.icon.is-small.is-left
+                i.fas.fa-search
 
-      .speed-block
-        p.speed-label(
-          :style="{color: textColor.text}") Geschwindigkeit:
-          br
-          | {{ speed }}x
+        settings-panel.settings-area(:items="SETTINGS" @click="handleSettingChange")
 
-        vue-slider.speed-slider(v-model="speed"
-          :data="speedStops"
-          :duration="0"
-          :dotSize="20"
-          tooltip="active"
-          tooltip-placement="bottom"
-          :tooltip-formatter="val => val + 'x'"
-        )
+        .speed-block
+          p.speed-label(
+            :style="{color: textColor.text}") Geschwindigkeit:
+            br
+            | {{ speed }}x
+
+          vue-slider.speed-slider(v-model="speed"
+            :data="speedStops"
+            :duration="0"
+            :dotSize="20"
+            tooltip="active"
+            tooltip-placement="bottom"
+            :tooltip-formatter="val => val + 'x'"
+          )
 
   .bottom-area
 
@@ -179,10 +188,12 @@ class VehicleAnimation extends Vue {
   private traces: crossfilter.Crossfilter<any> = crossfilter([])
   private traceStart!: crossfilter.Dimension<any, any>
   private traceEnd!: crossfilter.Dimension<any, any>
+  private traceVehicle!: crossfilter.Dimension<any, any>
 
   private paths: crossfilter.Crossfilter<any> = crossfilter([])
   private pathStart!: crossfilter.Dimension<any, any>
   private pathEnd!: crossfilter.Dimension<any, any>
+  private pathVehicle!: crossfilter.Dimension<any, any>
 
   private requests: crossfilter.Crossfilter<any> = crossfilter([])
   private requestStart!: crossfilter.Dimension<any, any>
@@ -191,6 +202,8 @@ class VehicleAnimation extends Vue {
   private simulationTime = 6 * 3600 // 8 * 3600 + 10 * 60 + 10
 
   private timeElapsedSinceLastFrame = 0
+
+  private searchTerm: string = ''
 
   private globalState = globalStore.state
   private isDarkMode = this.myState.colorScheme === ColorScheme.DarkMode
@@ -323,6 +336,29 @@ class VehicleAnimation extends Vue {
     this.updateLegendColors()
   }
 
+  @Watch('searchTerm') private handleSearch() {
+    if (!this.searchTerm) {
+      this.pathVehicle.filterAll()
+      this.traceVehicle.filterAll()
+    } else {
+      // this is not efficient but we have an array, soo....
+      const vehicleNumber = this.vehicleLookup.findIndex(v => v === this.searchTerm)
+      if (vehicleNumber > -1) {
+        console.log('vehicle', vehicleNumber)
+        this.pathVehicle.filterExact(vehicleNumber)
+        this.traceVehicle.filterExact(vehicleNumber)
+      } else {
+        console.log('nope')
+        this.pathVehicle.filterAll()
+        this.traceVehicle.filterAll()
+      }
+    }
+    //@ts-ignore
+    this.$options.paths = this.paths.allFiltered()
+    //@ts-ignore
+    this.$options.traces = this.traces.allFiltered()
+  }
+
   private arrayBufferToBase64(buffer: any) {
     var binary = ''
     var bytes = new Uint8Array(buffer)
@@ -368,6 +404,9 @@ class VehicleAnimation extends Vue {
 
   private setTime(seconds: number) {
     this.simulationTime = seconds
+    this.setWallClock()
+
+    if (!this.traceStart || !this.pathStart || !this.requestStart) return
 
     this.traceStart.filter([0, this.simulationTime])
     this.traceEnd.filter([this.simulationTime, Infinity])
@@ -382,8 +421,6 @@ class VehicleAnimation extends Vue {
     this.$options.traces = this.traces.allFiltered()
     //@ts-ignore
     this.$options.drtRequests = this.requests.allFiltered()
-
-    this.setWallClock()
   }
 
   private toggleSimulation() {
@@ -422,12 +459,14 @@ class VehicleAnimation extends Vue {
     this.paths = await this.parseVehicles(trips)
     this.pathStart = this.paths.dimension(d => d.t0)
     this.pathEnd = this.paths.dimension(d => d.t1)
+    this.pathVehicle = this.paths.dimension(d => d.v)
 
     console.log('Routen verarbeiten...')
     this.myState.statusMessage = '/ Routen verarbeiten...'
     this.traces = await this.parseRouteTraces(trips)
     this.traceStart = this.traces.dimension(d => d.t0)
     this.traceEnd = this.traces.dimension(d => d.t1)
+    this.traceVehicle = this.traces.dimension(d => d.v)
 
     console.log('Anfragen sortieren...')
     this.myState.statusMessage = '/ Anfragen...'
@@ -445,7 +484,7 @@ class VehicleAnimation extends Vue {
     this.animate()
   }
 
-  private vehicleLookup: Uint32Array[] = []
+  private vehicleLookup: string[] = []
 
   private async parseVehicles(trips: any[]) {
     const allTrips: any[] = []
@@ -473,6 +512,9 @@ class VehicleAnimation extends Vue {
   }
 
   private updateDatasetFilters() {
+    // dont' filter if we haven't loaded yet
+    if (!this.traceStart || !this.pathStart || !this.requestStart) return
+
     // filter out all traces that havent started or already finished
     if (this.SETTINGS.Routen) {
       this.traceStart.filter([0, this.simulationTime])
@@ -681,13 +723,11 @@ export default VehicleAnimation
 }
 
 .speed-block {
-  margin-top: 2rem;
-  padding: 0 0.25rem 0 0.5rem;
+  margin-top: 1rem;
 }
 
 .legend-block {
   margin-top: 2rem;
-  padding: 0rem 0.25rem;
 }
 
 .speed-slider {
@@ -735,8 +775,8 @@ export default VehicleAnimation
   background-color: $steelGray;
   color: white;
   font-size: 0.8rem;
-  padding: 0.25rem 0.25rem;
-  margin: 1rem 0rem 0 0;
+  padding: 0.25rem 0;
+  margin: 1.5rem 0rem 0 0;
 }
 
 .anim {
@@ -766,6 +806,16 @@ export default VehicleAnimation
 .tooltip {
   padding: 5rem 5rem;
   background-color: #ccc;
+}
+
+.panel-items {
+  margin: 0 0.5rem;
+}
+
+input {
+  border: none;
+  background-color: #235;
+  color: #ccc;
 }
 
 @media only screen and (max-width: 640px) {

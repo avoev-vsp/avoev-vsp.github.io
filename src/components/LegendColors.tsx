@@ -21,7 +21,7 @@ export default function Component(props: {
   ))
 
   return (
-    <div style={{ padding: '0rem 0.25rem' }}>
+    <div>
       <h4
         style={{
           color: 'white',
