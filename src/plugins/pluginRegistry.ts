@@ -1,5 +1,6 @@
 // import plugins in the order you want them to appear on project pages
 import VehicleAnimation from '@/plugins/vehicle-animation/VehicleAnimation.vue'
+import XyHexagons from '@/plugins/xy-hexagons/XyHexagons.vue'
 import AgentAnimation from '@/plugins/agent-animation/AgentAnimation.vue'
 import LinkVolumes from '@/plugins/link-vols/LinkVolumes.vue'
 import SankeyDiagram from '@/plugins/sankey/SankeyDiagram.vue'
@@ -12,6 +13,7 @@ import ImageView from '@/plugins/image/ImageView.vue'
 // EVERY plugin must be registered here:
 const plugins = {
   VehicleAnimation,
+  XyHexagons,
   AgentAnimation,
   LinkVolumes,
   SankeyDiagram,

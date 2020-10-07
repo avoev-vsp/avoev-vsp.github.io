@@ -890,6 +890,15 @@
     exec-sh "^0.3.2"
     minimist "^1.2.0"
 
+"@deck.gl/aggregation-layers@^8.2.9":
+  version "8.2.9"
+  resolved "https://registry.yarnpkg.com/@deck.gl/aggregation-layers/-/aggregation-layers-8.2.9.tgz#d2acb008632c44147392ac3fc93eb2f30e07c5f6"
+  integrity sha512-2FI/ZEpqMaLwnWCFHvjSnlCplR+t4bq5BNWmwWkCsTxI+u1bkG8y9DHUMIuXAFriraBcVT/JhNjQlJvS/xZ9Tg==
+  dependencies:
+    "@luma.gl/shadertools" "^8.2.0"
+    "@math.gl/web-mercator" "^3.2.1"
+    d3-hexbin "^0.2.1"
+
 "@deck.gl/core@^8.2.7":
   version "8.2.8"
   resolved "https://registry.yarnpkg.com/@deck.gl/core/-/core-8.2.8.tgz#d2878b7efc3861cb26b947f99a7d4b5499fcb59d"
@@ -6449,6 +6458,11 @@ d3-geo@1.7.1:
   integrity sha512-O4AempWAr+P5qbk2bC2FuN/sDW4z+dN2wDf9QV3bxQt4M5HfOEeXLgJ/UKQW0+o1Dj8BE+L5kiDbdWUMjsmQpw==
   dependencies:
     d3-array "1"
+
+d3-hexbin@^0.2.1:
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/d3-hexbin/-/d3-hexbin-0.2.2.tgz#9c5837dacfd471ab05337a9e91ef10bfc4f98831"
+  integrity sha1-nFg32s/UcasFM3qeke8Qv8T5iDE=
 
 d3-hierarchy@^1.1.9:
   version "1.1.9"
