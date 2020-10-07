@@ -54,7 +54,8 @@ const DRT_REQUEST = {
   fromY: 2,
   toX: 3,
   toY: 4,
-  arrival: 5,
+  veh: 5,
+  arrival: 6,
 }
 
 export default function Component(props: {
@@ -204,6 +205,7 @@ export default function Component(props: {
         getTargetColor: [200, 255, 255],
         getWidth: arcWidth,
         opacity: 0.5,
+        searchFlag: searchEnabled ? 1.0 : 0.0,
       })
     )
 

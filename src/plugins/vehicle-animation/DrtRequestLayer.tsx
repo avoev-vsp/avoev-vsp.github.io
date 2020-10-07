@@ -4,6 +4,7 @@ const defaultProps = {
   currentTime: { type: 'number', value: 0, min: 0 },
   getTimeStart: { type: 'accessor', value: null },
   getTimeEnd: { type: 'accessor', value: null },
+  searchFlag: { type: 'number', value: 0 },
 }
 
 export default class DrtRequestArcLayer extends ArcLayer {
@@ -15,10 +16,13 @@ export default class DrtRequestArcLayer extends ArcLayer {
         attribute float timeStart;
         attribute float timeEnd;
         uniform float currentTime;
+        uniform float searchFlag;
         varying float vTime;
       `,
       'vs:#main-start': `\
-        if(timeEnd == -1.0 || timeStart > currentTime || timeEnd < currentTime ) {
+        if (searchFlag == 1.0) {
+          vTime = 999.0;
+        } else if (timeEnd == -1.0 || timeStart > currentTime || timeEnd < currentTime ) {
           vTime = -1.0;
           return;
         } else {
@@ -29,10 +33,11 @@ export default class DrtRequestArcLayer extends ArcLayer {
       `,
       'fs:#decl': `\
         uniform float currentTime;
+        uniform float searchFlag;
         varying float vTime;
       `,
       'fs:#main-start': `\
-        if ( vTime == -1.0 ) discard;
+      if (searchFlag == 0.0 && vTime == -1.0 ) discard;
       `,
       // fade the traces in and out
       'fs:DECKGL_FILTER_COLOR': `\
