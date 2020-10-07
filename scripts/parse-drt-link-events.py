@@ -64,7 +64,7 @@ for link in links.values:
 print("reading events:", p_events)
 events = matsim.event_reader(
     p_events,
-    types="entered link,left link,vehicle enters traffic,vehicle leaves traffic,PersonEntersVehicle,PersonLeavesVehicle,DrtRequest submitted",
+    types="entered link,left link,vehicle enters traffic,vehicle leaves traffic,PersonEntersVehicle,PersonLeavesVehicle,DrtRequest submitted,PassengersRequest scheduled",
 )
 
 # lookups by person's health status, coords, and timepoints
@@ -93,6 +93,9 @@ for event in events:
             coord_to[1],
         ]
         continue
+
+    elif event["type"] == "PassengersRequest scheduled":
+        drt_requests[event["person"]].append(event["vehicle"])
 
     elif "vehicle" in event and not "drt" in event["vehicle"]:
         continue

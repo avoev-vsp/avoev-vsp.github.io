@@ -201,6 +201,7 @@ class VehicleAnimation extends Vue {
   private requests: crossfilter.Crossfilter<any> = crossfilter([])
   private requestStart!: crossfilter.Dimension<any, any>
   private requestEnd!: crossfilter.Dimension<any, any>
+  private requestVehicle!: crossfilter.Dimension<any, any>
 
   private simulationTime = 6 * 3600 // 8 * 3600 + 10 * 60 + 10
 
@@ -344,19 +345,23 @@ class VehicleAnimation extends Vue {
     if (!this.searchTerm) {
       this.pathVehicle?.filterAll()
       this.traceVehicle?.filterAll()
+      this.requestVehicle?.filterAll()
       this.searchEnabled = false
     } else {
-      // this is not efficient but we have an array, soo....
-      const vehicleNumber = this.vehicleLookup.findIndex(v => v === this.searchTerm)
+      const vehicleNumber = this.vehicleLookupString[this.searchTerm]
       if (vehicleNumber > -1) {
         console.log('vehicle', vehicleNumber)
         this.pathVehicle?.filterExact(vehicleNumber)
         this.traceVehicle?.filterExact(vehicleNumber)
+        this.requestVehicle?.filterExact(vehicleNumber)
+        this.requestStart.filterAll()
+        this.requestEnd.filterAll()
         this.searchEnabled = true
       } else {
         console.log('nope')
         this.pathVehicle?.filterAll()
         this.traceVehicle?.filterAll()
+        this.requestVehicle?.filterAll()
         this.searchEnabled = false
       }
     }
@@ -423,12 +428,13 @@ class VehicleAnimation extends Vue {
     if (this.traceStart && this.pathStart && this.requestStart) {
       this.pathStart.filter([0, this.simulationTime])
       this.pathEnd.filter([this.simulationTime, Infinity])
-      this.requestStart.filter([0, this.simulationTime])
-      this.requestEnd.filter([this.simulationTime, Infinity])
-      // only scrub vehicles if search is disabled
+
+      // scrub vehicles if search is disabled
       if (!this.searchEnabled) {
         this.traceStart.filter([0, this.simulationTime])
         this.traceEnd.filter([this.simulationTime, Infinity])
+        this.requestStart.filter([0, this.simulationTime])
+        this.requestEnd.filter([this.simulationTime, Infinity])
       }
     }
 
@@ -487,9 +493,10 @@ class VehicleAnimation extends Vue {
 
     console.log('Anfragen sortieren...')
     this.myState.statusMessage = '/ Anfragen...'
-    this.requests = crossfilter(drtRequests)
+    this.requests = await this.parseDrtRequests(drtRequests)
     this.requestStart = this.requests.dimension(d => d[0]) // time0
-    this.requestEnd = this.requests.dimension(d => d[5]) // arrival
+    this.requestEnd = this.requests.dimension(d => d[6]) // arrival
+    this.requestVehicle = this.requests.dimension(d => d[5])
 
     console.log('GO!')
     this.myState.statusMessage = ''
@@ -502,6 +509,20 @@ class VehicleAnimation extends Vue {
   }
 
   private vehicleLookup: string[] = []
+  private vehicleLookupString: { [id: string]: number } = {}
+
+  private async parseDrtRequests(requests: any[]) {
+    if (this.vehicleLookup.length) {
+      for (const request of requests) {
+        try {
+          request[5] = this.vehicleLookupString[request[5]]
+        } catch (e) {}
+      }
+    }
+
+    console.log(requests)
+    return crossfilter(requests)
+  }
 
   private async parseVehicles(trips: any[]) {
     const allTrips: any[] = []
@@ -514,6 +535,7 @@ class VehicleAnimation extends Vue {
       // attache vehicle ID to each segment so we can click
       vehNumber++
       this.vehicleLookup[vehNumber] = trip.id
+      this.vehicleLookupString[trip.id] = vehNumber
 
       for (let i = 0; i < trip.path.length - 1; i++) {
         allTrips.push({
@@ -551,10 +573,15 @@ class VehicleAnimation extends Vue {
       this.$options.paths = this.paths.allFiltered()
     }
     if (this.SETTINGS['DRT Anfragen']) {
-      this.requestStart.filter([0, this.simulationTime])
-      this.requestEnd.filter([this.simulationTime, Infinity])
-      //@ts-ignore
-      this.$options.drtRequests = this.requests.allFiltered()
+      if (this.searchEnabled) {
+        this.requestStart.filterAll()
+        this.requestEnd.filterAll()
+      } else {
+        this.requestStart.filter([0, this.simulationTime])
+        this.requestEnd.filter([this.simulationTime, Infinity])
+        //@ts-ignore
+        this.$options.drtRequests = this.requests.allFiltered()
+      }
     }
   }
 
