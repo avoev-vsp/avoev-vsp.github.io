@@ -342,28 +342,21 @@ class VehicleAnimation extends Vue {
   }
 
   @Watch('searchTerm') private handleSearch() {
-    if (!this.searchTerm) {
+    const vehicleNumber = this.vehicleLookupString[this.searchTerm]
+    if (vehicleNumber > -1) {
+      console.log('vehicle', vehicleNumber)
+      this.pathVehicle?.filterExact(vehicleNumber)
+      this.traceVehicle?.filterExact(vehicleNumber)
+      this.requestVehicle?.filterExact(vehicleNumber)
+      this.requestStart.filterAll()
+      this.requestEnd.filterAll()
+      this.searchEnabled = true
+    } else {
+      console.log('nope')
       this.pathVehicle?.filterAll()
       this.traceVehicle?.filterAll()
       this.requestVehicle?.filterAll()
       this.searchEnabled = false
-    } else {
-      const vehicleNumber = this.vehicleLookupString[this.searchTerm]
-      if (vehicleNumber > -1) {
-        console.log('vehicle', vehicleNumber)
-        this.pathVehicle?.filterExact(vehicleNumber)
-        this.traceVehicle?.filterExact(vehicleNumber)
-        this.requestVehicle?.filterExact(vehicleNumber)
-        this.requestStart.filterAll()
-        this.requestEnd.filterAll()
-        this.searchEnabled = true
-      } else {
-        console.log('nope')
-        this.pathVehicle?.filterAll()
-        this.traceVehicle?.filterAll()
-        this.requestVehicle?.filterAll()
-        this.searchEnabled = false
-      }
     }
     this.updateDatasetFilters()
   }
@@ -520,7 +513,6 @@ class VehicleAnimation extends Vue {
       }
     }
 
-    console.log(requests)
     return crossfilter(requests)
   }
 
@@ -566,12 +558,14 @@ class VehicleAnimation extends Vue {
       //@ts-ignore
       this.$options.traces = this.traces.allFiltered()
     }
+
     if (this.SETTINGS.Fahrzeuge) {
       this.pathStart.filter([0, this.simulationTime])
       this.pathEnd.filter([this.simulationTime, Infinity])
       //@ts-ignore:
       this.$options.paths = this.paths.allFiltered()
     }
+
     if (this.SETTINGS['DRT Anfragen']) {
       if (this.searchEnabled) {
         this.requestStart.filterAll()
@@ -579,9 +573,9 @@ class VehicleAnimation extends Vue {
       } else {
         this.requestStart.filter([0, this.simulationTime])
         this.requestEnd.filter([this.simulationTime, Infinity])
-        //@ts-ignore
-        this.$options.drtRequests = this.requests.allFiltered()
       }
+      //@ts-ignore
+      this.$options.drtRequests = this.requests.allFiltered()
     }
   }
 
