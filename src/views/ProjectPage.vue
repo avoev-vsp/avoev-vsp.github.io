@@ -358,7 +358,7 @@ export default class VueComponent extends Vue {
 
     console.log({ runs })
 
-    const runDetails: any = []
+    // const runDetails: any = []
 
     for (const run of runs) {
       const folder = run.folder
@@ -368,13 +368,12 @@ export default class VueComponent extends Vue {
         const details: any = yaml.parse(metadata)
 
         details.folder = folder
-        runDetails.push(details)
+        this.projectYaml.push(details)
       } catch (e) {
         console.warn('no metadata for', folder)
-        runDetails.push({ title: folder, folder, notes: [] })
+        this.projectYaml.push({ title: folder, folder, notes: [] })
       }
     }
-    this.projectYaml = runDetails
     console.log({ projectYaml: this.projectYaml })
   }
 
