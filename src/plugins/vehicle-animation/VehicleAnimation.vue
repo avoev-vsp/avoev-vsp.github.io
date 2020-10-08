@@ -29,7 +29,7 @@
           title="Passagiere:" :items="legendItems")
 
         .search-panel
-          p.speed-label(:style="{margin: '1rem 0 0 0', color: textColor.text}") Search:
+          p.speed-label(:style="{margin: '1rem 0 0 0', color: textColor.text}") Suche:
           form(autocomplete="off")
           .field
             p.control.has-icons-left
@@ -249,7 +249,7 @@ class VehicleAnimation extends Vue {
     this.myState.yamlConfig = config
   }
 
-  private generateBreadcrumbs() {
+  private async generateBreadcrumbs() {
     if (!this.myState.fileSystem) return []
 
     const crumbs = [
@@ -270,6 +270,27 @@ class VehicleAnimation extends Vue {
         url: '/' + this.myState.fileSystem.url + buildFolder,
       })
     }
+
+    // get run title in there
+    try {
+      const metadata = await this.myState.fileApi.getFileText(
+        this.myState.subfolder + '/metadata.yml'
+      )
+      const details = YAML.parse(metadata)
+
+      if (details.title) {
+        const lastElement = crumbs.pop()
+        const url = lastElement ? lastElement.url : '/'
+        crumbs.push({ label: details.title, url })
+      }
+    } catch (e) {
+      // if something went wrong the UI will just show the folder name
+      // which is fine
+    }
+    crumbs.push({
+      label: this.vizDetails.title ? this.vizDetails.title : '',
+      url: '#',
+    })
 
     // save them!
     globalStore.commit('setBreadCrumbs', crumbs)
@@ -361,9 +382,15 @@ class VehicleAnimation extends Vue {
     this.updateDatasetFilters()
   }
 
-  private handleClick(vehicleNumber: number) {
-    console.log('GOT YOU!', vehicleNumber, this.vehicleLookup[vehicleNumber])
+  private handleClick(vehicleNumber: any) {
+    // null means empty area clicked: clear map.
+    if (vehicleNumber === null) {
+      this.searchTerm = ''
+      return
+    }
+
     const vehId = this.vehicleLookup[vehicleNumber]
+    console.log(vehId)
 
     // set -- or clear -- search box!
     if (this.searchTerm === vehId) this.searchTerm = ''

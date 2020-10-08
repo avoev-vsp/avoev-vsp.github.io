@@ -33,6 +33,7 @@ void main(void) {
   }
 
   gl_FragColor = vec4(color, a);
+  // gl_FragColor = picking_filterPickingColor(gl_FragColor)
 
   DECKGL_FILTER_COLOR(gl_FragColor, geometry);
 }

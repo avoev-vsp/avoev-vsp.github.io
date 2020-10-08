@@ -51,7 +51,9 @@ function resizeTexture(gl: any, texture: any, width: any, height: any) {
 
   const newTexture = cloneTextureFrom(texture, { width, height })
   copyToTexture(texture, newTexture, {
+    targetX: 0,
     targetY: 0,
+    targetZ: 0,
     width: oldWidth,
     height: oldHeight,
   })

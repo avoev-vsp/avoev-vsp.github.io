@@ -98,8 +98,13 @@ export default function Component(props: {
   const layers: any = []
 
   function handleClick() {
-    if (!hoverInfo.object) return
-    onClick(hoverInfo.object.v)
+    console.log(hoverInfo)
+    // send null as message that blank area was clicked
+    if (!hoverInfo.object) {
+      onClick(null)
+    } else {
+      onClick(hoverInfo.object.v)
+    }
   }
 
   function renderTooltip({ hoverInfo }: any) {
@@ -186,7 +191,7 @@ export default function Component(props: {
         autoHighlight: true,
         highlightColor: [255, 0, 255],
         onHover: setHoverInfo,
-        onClick: handleClick,
+        // onClick: handleClick,
       })
     )
 
@@ -217,6 +222,7 @@ export default function Component(props: {
       initialViewState={initialView}
       controller={true}
       getCursor={() => 'pointer'}
+      onClick={handleClick}
     >
       {
         /*
