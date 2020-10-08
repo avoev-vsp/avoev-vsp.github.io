@@ -466,7 +466,7 @@ h2 {
 .viz-table {
   display: grid;
   grid-gap: 1.5rem;
-  grid-template-columns: repeat(3, minmax(100px, 1fr));
+  grid-template-columns: repeat(2, minmax(100px, 1fr));
   list-style: none;
   margin: 1rem 0;
   padding-left: 0px;
@@ -513,7 +513,7 @@ h2 {
 .folder {
   cursor: pointer;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   background-color: white;
   margin: 0.25rem 0rem;
   background-color: #eee;
@@ -541,13 +541,14 @@ li.notes-item {
 }
 
 .folder:hover {
-  background-color: #ffd;
-  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.05), 0 3px 10px 0 rgba(0, 0, 0, 0.05);
+  background-color: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1), 0 3px 10px 0 rgba(0, 0, 0, 0.05);
   transition: box-shadow 0.1s ease-in-out;
 }
 
 .banner {
-  background-color: $tuRed;
+  flex: 1;
+  background-color: $steelGray;
   padding: 0.75rem 1rem;
   h3 {
     margin-top: 1rem;
@@ -555,6 +556,7 @@ li.notes-item {
 }
 
 .notes {
+  flex: 2;
   padding: 0.75rem 1rem;
 }
 
@@ -679,9 +681,13 @@ a.footer {
   margin-left: auto;
 }
 
-@media only screen and (max-width: 900px) {
+@media only screen and (max-width: 1024px) {
   .colophon {
     display: none;
+  }
+
+  .folder {
+    flex-direction: column;
   }
 
   .viz-table {
