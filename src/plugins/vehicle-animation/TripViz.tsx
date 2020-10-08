@@ -43,7 +43,7 @@ const INITIAL_VIEW_STATE = {
   latitude: 52.1,
   longitude: 14,
   zoom: 10,
-  pitch: 20,
+  pitch: 0,
   minZoom: 2,
   maxZoom: 22,
 }
@@ -178,7 +178,7 @@ export default function Component(props: {
         getColor: (d: any) => props.colors[d.occ],
         iconMoving: 'vehicle',
         iconStill: 'diamond',
-        getSize: searchEnabled ? 48 : 36,
+        getSize: searchEnabled ? 56 : 44,
         opacity: 1.0,
         currentTime: simulationTime,
         shadowEnabled: false,
@@ -191,7 +191,6 @@ export default function Component(props: {
         autoHighlight: true,
         highlightColor: [255, 0, 255],
         onHover: setHoverInfo,
-        // onClick: handleClick,
       })
     )
 
