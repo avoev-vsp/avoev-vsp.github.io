@@ -96,12 +96,12 @@ export default class IconLayer extends Layer {
       },
       instanceOffsets: { size: 2, accessor: 'getIcon', transform: this.getInstanceOffset },
       instanceIconFrames: { size: 4, accessor: 'getIcon', transform: this.getInstanceIconFrame },
-      instanceColorModes: {
-        size: 1,
-        type: GL.UNSIGNED_BYTE,
-        accessor: 'getIcon',
-        transform: this.getInstanceColorMode,
-      },
+      // instanceColorModes: {
+      //   size: 1,
+      //   type: GL.UNSIGNED_BYTE,
+      //   accessor: 'getIcon',
+      //   transform: this.getInstanceColorMode,
+      // },
       instanceColors: {
         size: this.props.colorFormat.length,
         type: GL.UNSIGNED_BYTE,
@@ -158,7 +158,7 @@ export default class IconLayer extends Layer {
     if (iconMappingChanged) {
       attributeManager.invalidate('instanceOffsets')
       attributeManager.invalidate('instanceIconFrames')
-      attributeManager.invalidate('instanceColorModes')
+      // attributeManager.invalidate('instanceColorModes')
     }
 
     if (changeFlags.extensionsChanged) {
@@ -213,8 +213,8 @@ export default class IconLayer extends Layer {
             currentTime,
             pickable,
             iconStillOffsets: this.getInstanceOffset(iconStill),
-            iconStillColorModes: this.getInstanceColorMode(iconStill),
             iconStillFrames: this.getInstanceIconFrame(iconStill),
+            // iconStillColorModes: this.getInstanceColorMode(iconStill),
           })
         )
         .draw()
@@ -255,10 +255,10 @@ export default class IconLayer extends Layer {
     return [rect.width / 2 - rect.anchorX || 0, rect.height / 2 - rect.anchorY || 0]
   }
 
-  getInstanceColorMode(icon: any) {
-    const mapping = this.state.iconManager.getIconMapping(icon)
-    return mapping.mask ? 1 : 0
-  }
+  // getInstanceColorMode(icon: any) {
+  //   const mapping = this.state.iconManager.getIconMapping(icon)
+  //   return mapping.mask ? 1 : 0
+  // }
 
   getInstanceIconFrame(icon: any) {
     const rect = this.state.iconManager.getIconMapping(icon)

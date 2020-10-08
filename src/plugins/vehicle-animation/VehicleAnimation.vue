@@ -550,8 +550,9 @@ class VehicleAnimation extends Vue {
     await coroutines.forEachAsync(trips, (trip: any) => {
       const path = trip.path
       const timestamps = trip.timestamps
+      const passengers = trip.passengers
 
-      // attache vehicle ID to each segment so we can click
+      // attach vehicle ID to each segment so we can click
       vehNumber++
       this.vehicleLookup[vehNumber] = trip.id
       this.vehicleLookupString[trip.id] = vehNumber
@@ -563,6 +564,7 @@ class VehicleAnimation extends Vue {
           p0: path[i],
           p1: path[i + 1],
           v: vehNumber,
+          occ: passengers[i],
         })
       }
     })

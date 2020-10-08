@@ -6,7 +6,7 @@ attribute float instanceSizes;
 attribute vec4 instanceColors;
 attribute vec3 instancePickingColors;
 attribute vec4 instanceIconFrames;
-attribute float instanceColorModes;
+// attribute float instanceColorModes;
 attribute vec2 instanceOffsets;
 attribute vec2 instancePixelOffset;
 
@@ -19,7 +19,7 @@ uniform bool billboard;
 uniform float currentTime;
 
 uniform vec2 iconStillOffsets;
-uniform float iconStillColorModes;
+// uniform float iconStillColorModes;
 uniform vec4 iconStillFrames;
 
 attribute float instanceTimestamps;
@@ -135,5 +135,5 @@ void main(void) {
   vColor = instanceColors;
   DECKGL_FILTER_COLOR(vColor, geometry);
 
-  vColorMode = (still ? iconStillColorModes : instanceColorModes);
+  vColorMode = still ?  0.0 : 1.0;
 }
