@@ -159,7 +159,7 @@ class XyHexagons extends Vue {
     file: '',
     projection: '',
     thumbnail: '',
-    center: [6.5, 51.0],
+    center: [13.39, 52.515],
     data: {} as any,
   }
 
@@ -297,7 +297,7 @@ class XyHexagons extends Vue {
         this.myState.subfolder + '/' + this.myState.yamlConfig
       )
       this.vizDetails = YAML.parse(text)
-      if (!this.vizDetails.center) this.vizDetails.center = [14, 52.1]
+      if (!this.vizDetails.center) this.vizDetails.center = [13.39, 52.515]
     } catch (e) {
       console.log('failed')
       // maybe it failed because password?

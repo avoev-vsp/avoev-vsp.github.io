@@ -79,7 +79,11 @@ export default function App({
   coverage = 0.8,
   extrude = true,
   maxHeight = 500,
+  center = [6, 40],
 }) {
+  const [lon, lat] = center
+  const initialView = Object.assign(INITIAL_VIEW_STATE, { longitude: lon, latitude: lat })
+
   const layers = [
     new HexagonLayer({
       id: 'hexlayer',
@@ -108,7 +112,7 @@ export default function App({
     <DeckGL
       layers={layers}
       effects={[lightingEffect]}
-      initialViewState={INITIAL_VIEW_STATE}
+      initialViewState={initialView}
       controller={true}
       getTooltip={getTooltip}
     >
