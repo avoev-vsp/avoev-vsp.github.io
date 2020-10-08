@@ -134,7 +134,7 @@ export default function Component(props: {
         <big>
           <b>Taxi: {vehicleId}</b>
         </big>
-        {object.occ && <div>Passagiere: {object.occ} </div>}
+        <div>Passagiere: {object.occ} </div>
       </div>
     )
   }
