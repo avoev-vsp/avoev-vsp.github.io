@@ -2,8 +2,8 @@
 .xy-hexagons(:class="{'hide-thumbnail': !thumbnail}"
         :style='{"background": urlThumbnail}' oncontextmenu="return false")
 
-  xy-hex-layer.anim(v-if="!thumbnail" :simulationTime="simulationTime"
-                :center="vizDetails.center"
+  xy-hex-layer.anim(v-if="!thumbnail && isLoaded"
+                :center="center"
                 :data="requests"
                 :extrude="extrudeTowers"
                 :radius="radius"
@@ -71,10 +71,6 @@ import * as coroutines from 'js-coroutines'
 import globalStore from '@/store'
 import pako from '@aftersim/pako'
 import CollapsiblePanel from '@/components/CollapsiblePanel.vue'
-import LegendColors from '@/components/LegendColors'
-import ModalMarkdownDialog from '@/components/ModalMarkdownDialog.vue'
-// import PlaybackControls from './PlaybackControls.vue'
-import SettingsPanel from '@/components/SettingsPanel.vue'
 
 import {
   ColorScheme,
@@ -96,11 +92,8 @@ Vue.use(VuePlugin)
 @Component({
   components: {
     CollapsiblePanel,
-    SettingsPanel,
-    LegendColors,
     XyHexLayer,
     VueSlider,
-    // PlaybackControls,
     ToggleButton,
   } as any,
 })
@@ -121,96 +114,33 @@ class XyHexagons extends Vue {
   private maxHeight = 500
   private extrudeTowers = true
 
-  private COLOR_OCCUPANCY: any = {
-    0: [255, 255, 85],
-    1: [32, 96, 255],
-    2: [85, 255, 85],
-    3: [255, 85, 85],
-    4: [200, 0, 0],
-    // 5: [255, 150, 255],
-  }
-
-  COLOR_OCCUPANCY_MATSIM_UNUSED: any = {
-    0: [255, 85, 255],
-    1: [255, 255, 85],
-    2: [85, 255, 85],
-    3: [85, 85, 255],
-    4: [255, 85, 85],
-    5: [255, 85, 0],
-  }
-
-  SETTINGS: { [label: string]: boolean } = {
-    Fahrzeuge: true,
-    Routen: false,
-    'DRT Anfragen': false,
-  }
-
-  private legendItems: LegendItem[] = Object.keys(this.COLOR_OCCUPANCY).map(key => {
-    return { type: LegendItemType.line, color: this.COLOR_OCCUPANCY[key], value: key, label: key }
-  })
-
-  private legendRequests = [
-    { type: LegendItemType.line, color: [255, 0, 255], value: 0, label: '' },
-  ]
-
   private vizDetails = {
     title: '',
     description: '',
     file: '',
     projection: '',
     thumbnail: '',
-    center: [13.39, 52.515],
     data: {} as any,
   }
 
   public myState = {
     statusMessage: '',
-    clock: '00:00',
     colorScheme: ColorScheme.DarkMode,
-    isRunning: false,
-    isShowingHelp: false,
     fileApi: this.fileApi,
     fileSystem: undefined as SVNProject | undefined,
     subfolder: this.subfolder,
     yamlConfig: this.yamlConfig,
     thumbnail: this.thumbnail,
-    data: [] as any[],
   }
 
-  private timeStart = 0
-  private timeEnd = 86400
-
-  private traces: crossfilter.Crossfilter<any> = crossfilter([])
-  private traceStart!: crossfilter.Dimension<any, any>
-  private traceEnd!: crossfilter.Dimension<any, any>
-  private traceVehicle!: crossfilter.Dimension<any, any>
-
-  private paths: crossfilter.Crossfilter<any> = crossfilter([])
-  private pathStart!: crossfilter.Dimension<any, any>
-  private pathEnd!: crossfilter.Dimension<any, any>
-  private pathVehicle!: crossfilter.Dimension<any, any>
-
   private requests: any[] = []
-  private requestStart!: crossfilter.Dimension<any, any>
-  private requestEnd!: crossfilter.Dimension<any, any>
-  private requestVehicle!: crossfilter.Dimension<any, any>
-
-  private simulationTime = 6 * 3600 // 8 * 3600 + 10 * 60 + 10
-
-  private timeElapsedSinceLastFrame = 0
 
   private searchTerm: string = ''
   private searchEnabled = false
 
   private globalState = globalStore.state
   private isDarkMode = this.myState.colorScheme === ColorScheme.DarkMode
-  private isLoaded = true
-  private showHelp = false
-
-  private speedStops = [-10, -5, -2, -1, -0.5, -0.25, 0, 0.25, 0.5, 1, 2, 5, 10]
-  private speed = 1
-
-  private legendBits: any[] = []
+  private isLoaded = false
 
   private activeAggregation: string = ''
 
@@ -219,11 +149,6 @@ class XyHexagons extends Vue {
     // get element offsets in data array
     const col = this.aggregations[item]
     this.requests = this.rawRequests.map(r => [r[col[0]], r[col[1]]])
-  }
-
-  private async handleSettingChange(label: string) {
-    console.log(label)
-    this.SETTINGS[label] = !this.SETTINGS[label]
   }
 
   // this happens if viz is the full page, not a thumbnail on a project page
@@ -270,6 +195,11 @@ class XyHexagons extends Vue {
       })
     }
 
+    crumbs.push({
+      label: this.vizDetails.title,
+      url: '#',
+    })
+
     // save them!
     globalStore.commit('setBreadCrumbs', crumbs)
 
@@ -297,7 +227,6 @@ class XyHexagons extends Vue {
         this.myState.subfolder + '/' + this.myState.yamlConfig
       )
       this.vizDetails = YAML.parse(text)
-      if (!this.vizDetails.center) this.vizDetails.center = [13.39, 52.515]
     } catch (e) {
       console.log('failed')
       // maybe it failed because password?
@@ -305,12 +234,8 @@ class XyHexagons extends Vue {
         globalStore.commit('requestLogin', this.myState.fileSystem.url)
       }
     }
-
-    // title
-    const t = this.vizDetails.title ? this.vizDetails.title : 'Agent Animation'
+    const t = this.vizDetails.title ? this.vizDetails.title : 'Hex Aggregation'
     this.$emit('title', t)
-
-    this.buildThumbnail()
   }
 
   private async buildThumbnail() {
@@ -337,7 +262,7 @@ class XyHexagons extends Vue {
 
   @Watch('state.colorScheme') private swapTheme() {
     this.isDarkMode = this.myState.colorScheme === ColorScheme.DarkMode
-    this.updateLegendColors()
+    // this.updateLegendColors()
   }
 
   private arrayBufferToBase64(buffer: any) {
@@ -377,6 +302,30 @@ class XyHexagons extends Vue {
     return this.myState.colorScheme === ColorScheme.DarkMode ? darkmode : lightmode
   }
 
+  private findCenter(data: any[]): [number, number] {
+    let prop = '' // get first property only
+    for (prop in this.aggregations) break
+
+    const xcol = this.aggregations[prop][0]
+    const ycol = this.aggregations[prop][1]
+
+    let x = 0
+    let y = 0
+
+    let count = 0
+    for (let i = 0; i < data.length; i += 64) {
+      count++
+      x += data[i][xcol]
+      y += data[i][ycol]
+    }
+    x = x / count
+    y = y / count
+
+    return [x, y]
+  }
+
+  private center = [0, 0]
+
   private async mounted() {
     globalStore.commit('setFullScreen', !this.thumbnail)
 
@@ -385,20 +334,33 @@ class XyHexagons extends Vue {
 
     if (this.thumbnail) return
 
-    this.showHelp = false
     this.generateBreadcrumbs()
-    this.updateLegendColors()
 
     this.myState.statusMessage = 'Dateien laden...'
+
     console.log('loading files')
     const { dataArray } = await this.loadFiles()
+    this.rawRequests = dataArray
+
+    this.aggregations = this.parseAggregations()
+    this.center = this.findCenter(this.rawRequests)
+
+    this.isLoaded = true
+    this.buildThumbnail()
 
     console.log('DRT Anfragen sortieren...')
     this.myState.statusMessage = 'DRT Anfragen sortieren...'
-    this.rawRequests = dataArray
     this.handleOrigDest(Object.keys(this.aggregations)[0]) // origins
 
     this.myState.statusMessage = ''
+  }
+
+  private parseAggregations(): { [id: string]: [number, number] } {
+    const aggs = {} as any
+    for (let agg of this.vizDetails.data.aggregations) {
+      aggs[agg.title] = [agg.x, agg.y]
+    }
+    return aggs
   }
 
   private rawRequests: any[] = []
@@ -406,7 +368,6 @@ class XyHexagons extends Vue {
   private beforeDestroy() {
     globalStore.commit('setFullScreen', false)
     this.$store.commit('setFullScreen', false)
-    this.myState.isRunning = false
   }
 
   private aggregations: { [id: string]: [number, number] } = {}
@@ -434,17 +395,7 @@ class XyHexagons extends Vue {
       console.error(e)
       this.myState.statusMessage = '' + e
     }
-
-    for (let agg of this.vizDetails.data.aggregations) {
-      this.aggregations[agg.title] = [agg.x, agg.y]
-    }
-
-    console.log(this.aggregations)
     return { dataArray }
-  }
-
-  private toggleLoaded(loaded: boolean) {
-    this.isLoaded = loaded
   }
 
   private rotateColors() {
@@ -612,17 +563,6 @@ p.speed-label {
   margin-bottom: 0.25rem;
 }
 
-.clock {
-  width: 100%;
-  background-color: #000000cc;
-  border: 3px solid white;
-}
-
-.clock p {
-  text-align: center;
-  padding: 5px 10px;
-}
-
 .tooltip {
   padding: 5rem 5rem;
   background-color: #ccc;
@@ -662,10 +602,6 @@ label {
     padding: 0.5rem 0.5rem;
   }
 
-  .clock {
-    text-align: center;
-  }
-
   .right-side {
     font-size: 0.7rem;
   }
@@ -675,17 +611,6 @@ label {
     margin-top: 0.5rem;
     font-size: 1.3rem;
     line-height: 2rem;
-  }
-
-  .side-section {
-    margin-left: 0;
-  }
-
-  .extra-buttons {
-    margin-right: 1rem;
-  }
-  .playback-stuff {
-    padding-right: 1rem;
   }
 }
 </style>

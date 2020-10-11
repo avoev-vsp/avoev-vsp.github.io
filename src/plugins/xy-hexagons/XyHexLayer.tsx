@@ -34,8 +34,6 @@ const material = {
 }
 
 const INITIAL_VIEW_STATE = {
-  longitude: 6.7,
-  latitude: 50.3,
   zoom: 9,
   minZoom: 5,
   maxZoom: 15,
@@ -79,7 +77,7 @@ export default function App({
   coverage = 0.8,
   extrude = true,
   maxHeight = 500,
-  center = [6, 40],
+  center = [14.34, 52.3],
 }) {
   const [lon, lat] = center
   const initialView = Object.assign(INITIAL_VIEW_STATE, { longitude: lon, latitude: lat })
@@ -99,7 +97,6 @@ export default function App({
       radius,
       upperPercentile,
       material,
-
       transitions: {
         elevationScale: { type: 'interpolation', duration: 1000 },
       },
