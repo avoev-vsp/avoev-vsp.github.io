@@ -53,7 +53,7 @@
     "react-map-gl": "^5.2.7",
     "read-blob": "^1.1.0",
     "shapefile": "^0.6.6",
-    "three": "^0.115.0",
+    "three": "^0.125.0",
     "vega": "^5.14.0",
     "vega-embed": "^6.11.1",
     "vega-lite": "^4.14.1",
