@@ -70,9 +70,10 @@ export default function Component(props: {
   searchEnabled: boolean
   onClick: any
 }) {
-  const mapStyle = 'mapbox://styles/vsp-tu-berlin/ckek59op0011219pbwfar1rex'
+  // const mapStyle = 'mapbox://styles/vsp-tu-berlin/ckek59op0011219pbwfar1rex'
   // const mapStyle = 'mapbox://styles/vsp-tu-berlin/ckeetelh218ef19ob5nzw5vbh'
   // mapStyle = "mapbox://styles/mapbox/dark-v10",
+  const mapStyle = 'mapbox://styles/mapbox/light-v9'
 
   const {
     simulationTime,
@@ -92,7 +93,7 @@ export default function Component(props: {
   initialView.latitude = center[1]
   initialView.longitude = center[0]
 
-  const arcWidth = 1
+  const arcWidth = 3
   const [hoverInfo, setHoverInfo] = useState({} as any)
 
   const layers: any = []
