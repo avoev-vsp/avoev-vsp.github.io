@@ -15,6 +15,20 @@ class SVNFileSystem {
     if (!project.svn.endsWith('/')) this.baseUrl += '/'
   }
 
+  public cleanURL(scaryPath: string) {
+    // hostile user could put anything in the URL really...
+    let path = this.baseUrl + scaryPath.replace(/^0-9a-zA-Z_\-\/:+/i, '')
+    // console.log('FETCHING:', scaryPath)
+    // console.log('CLEAN: ', path)
+
+    //@ts-ignore
+    path = path.replaceAll('//', '/')
+    path = path.replace('https:/', 'https://')
+    path = path.replace('http:/', 'http://')
+    // console.log('CLEAN2: ', path)
+    return path
+  }
+
   private async _getFileResponse(scaryPath: string): Promise<Response> {
     // hostile user could put anything in the URL really...
     let path = scaryPath.replace(/^0-9a-zA-Z_\-\/:+/i, '')

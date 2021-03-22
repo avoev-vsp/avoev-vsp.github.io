@@ -16,6 +16,7 @@ export default new Vuex.Store({
     needLoginForUrl: '',
     statusMessage: 'loading',
     svnProjects: svnConfig.projects,
+    colorScheme: ColorScheme.DarkMode,
     visualizationTypes: new Map() as Map<string, VisualizationPlugin>,
   },
   getters: {},
@@ -38,7 +39,7 @@ export default new Vuex.Store({
     setFullScreen(state, value: boolean) {
       state.isFullScreen = value
     },
-    setStatusMessage(state, value: string) {
+    setStatus(state, value: string) {
       state.statusMessage = value
     },
   },

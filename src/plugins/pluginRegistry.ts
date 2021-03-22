@@ -2,6 +2,7 @@
 import VehicleAnimation from '@/plugins/vehicle-animation/VehicleAnimation.vue'
 import XyHexagons from '@/plugins/xy-hexagons/XyHexagons.vue'
 import AgentAnimation from '@/plugins/agent-animation/AgentAnimation.vue'
+import LinksGl from '@/plugins/links-gl/LinksGl.vue'
 import LinkVolumes from '@/plugins/link-vols/LinkVolumes.vue'
 import SankeyDiagram from '@/plugins/sankey/SankeyDiagram.vue'
 import VegaLite from '@/plugins/vega-lite/VegaLite.vue'
@@ -15,6 +16,7 @@ const plugins = {
   VehicleAnimation,
   XyHexagons,
   AgentAnimation,
+  LinksGl,
   LinkVolumes,
   SankeyDiagram,
   VegaLite,
