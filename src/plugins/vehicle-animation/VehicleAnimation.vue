@@ -130,7 +130,7 @@ class VehicleAnimation extends Vue {
   private thumbnail!: boolean
 
   private COLOR_OCCUPANCY: any = {
-    0: [204, 102, 255],
+    0: [255, 255, 85],
     1: [32, 96, 255],
     2: [85, 255, 85],
     3: [255, 85, 85],
