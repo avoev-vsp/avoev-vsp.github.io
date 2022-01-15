@@ -39,7 +39,7 @@
     "js-coroutines": "^2.4.5",
     "mapbox-gl": "^1.11.0",
     "markdown-it": "^10.0.0",
-    "marked": "^0.8.0",
+    "marked": "^4.0.10",
     "medium-zoom": "^1.0.5",
     "micromatch": "^4.0.2",
     "moment": "^2.24.0",
